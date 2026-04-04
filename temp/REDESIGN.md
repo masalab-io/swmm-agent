@@ -747,6 +747,83 @@ Complex — uses `Uinlet.pas`. Separate class with culvert/grate geometry. Defer
 
 ---
 
+---
+
+### Geometry — `TVertexList` (Uvertex.pas)
+
+Geometry is **completely separate** from `Data[]` arrays. It is stored in two direct fields on each spatial object:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `X, Y: Extended` | single point | Node position / subcatchment centroid |
+| `Vlist: TVertexList` | linked list of `TVertex {X, Y, Next}` | Polyline vertices (links) or polygon boundary (subcatchments, storage nodes) |
+
+**Which objects carry geometry:**
+
+| Object | `X, Y` | `Vlist` | Shape |
+|---|---|---|---|
+| `TNode` (Junction/Outfall/Divider) | ✓ point location | empty | point |
+| `TNode` (Storage) | ✓ centroid | ✓ polygon boundary | polygon |
+| `TLink` (all link types) | — (comes from Node1/Node2) | ✓ intermediate bend points | polyline |
+| `TSubcatch` | ✓ centroid | ✓ polygon boundary | polygon |
+
+**Traversal** (`TVertexList` is a singly-linked list):
+```pascal
+V := Link.Vlist.First;
+while V <> nil do
+begin
+  // V^.X, V^.Y
+  V := Link.Vlist.Next;
+end;
+```
+
+**JSON representation — add to every element schema:**
+
+Nodes (junction/outfall/divider — point only):
+```json
+{ "x": 1000.0, "y": 2000.0 }
+```
+
+Storage node (polygon):
+```json
+{
+  "x": 1000.0, "y": 2000.0,
+  "polygon": [
+    {"x": 990, "y": 1990}, {"x": 1010, "y": 1990},
+    {"x": 1010, "y": 2010}, {"x": 990, "y": 2010}
+  ]
+}
+```
+
+Links — all types (polyline with optional intermediate vertices):
+```json
+{
+  "inlet_node": "J1", "outlet_node": "J2",
+  "vertices": [
+    {"x": 1050.0, "y": 2050.0},
+    {"x": 1100.0, "y": 2100.0}
+  ]
+}
+```
+`"vertices"` is an empty array `[]` when the link is a straight line between its two nodes.
+
+Subcatchment (polygon):
+```json
+{
+  "x": 500.0, "y": 1000.0,
+  "polygon": [
+    {"x": 400, "y": 900}, {"x": 600, "y": 900},
+    {"x": 600, "y": 1100}, {"x": 400, "y": 1100}
+  ]
+}
+```
+
+**Note:** The current `SwmmAgentAPI.pas` already returns `x, y` for nodes but silently drops `Vlist` on all objects. This must be corrected in `SwmmElementSchema.pas` — geometry is part of the element schema, not optional.
+
+**GeoJSON consideration:** For a future `--geojson` output flag, `polygon` and `vertices` map directly to GeoJSON `Polygon` and `LineString` geometries. Worth keeping the field names consistent with this.
+
+---
+
 ### Updated `SwmmElementSchema.pas` scope
 
 Based on this inventory, the schema unit covers:
