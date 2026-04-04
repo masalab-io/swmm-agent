@@ -1,0 +1,41 @@
+# Delphi build output
+delphi/*.dcu
+delphi/*.dcp
+delphi/*.exe
+delphi/*.dll
+delphi/__history/
+delphi/Win32/
+delphi/Win64/
+
+# Loader build output
+loader/*.dcu
+loader/*.exe
+loader/__history/
+loader/Win32/
+loader/Win64/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# SWMM runtime files
+*.rpt
+*.out
+*.hsf
+
+# Large archives — reference source is in swmm524_gui/
+swmm524_gui.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.suo
+*.user

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Read(//c/Program Files \\(x86\\)/Embarcadero/Studio/23.0/**)",
+      "Read(//c/Program Files \\(x86\\)/Embarcadero/**)",
+      "Bash(cmd.exe /c \"mkdir \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Dcp\\\\Win64\\\\\" && mkdir \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\hpp\\\\Win64\\\\\" && mkdir \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Bpl\\\\Win64\\\\\"\")",
+      "Bash(cmd.exe /c \"type \\\\\"C:\\\\Chaitanya\\\\MasaLab\\\\009SWMMAgent\\\\swmm524_gui\\\\Epaswmm5\\\\Epaswmm5.vrc\\\\\" | findstr /i vsf\")",
+      "Bash(cmd.exe /c \"type \"\"C:\\\\Chaitanya\\\\MasaLab\\\\009SWMMAgent\\\\swmm524_gui\\\\Epaswmm5\\\\Epaswmm5.vrc\"\"\")",
+      "Bash(cmd.exe /c \"attrib \\\\\"C:\\\\Chaitanya\\\\MasaLab\\\\009SWMMAgent\\\\swmm524_gui\\\\Epaswmm5\\\\Epaswmm5.vrc\\\\\"\")",
+      "Bash(cmd.exe /c \"attrib \\\\\"C:\\\\Chaitanya\\\\MasaLab\\\\009SWMMAgent\\\\swmm524_gui\\\\Epaswmm5\\\\Epaswmm5.vrc\\\\\"\" 2>&1)",
+      "Bash(cmd.exe /c \"attrib \\\\\"C:\\\\Chaitanya\\\\MasaLab\\\\009SWMMAgent\\\\swmm524_gui\\\\Epaswmm5\\\\Epaswmm5.vrc\\\\\" & echo DONE\")",
+      "Bash(cmd.exe /c \"attrib C:\\\\Chaitanya\\\\MasaLab\\\\009SWMMAgent\\\\swmm524_gui\\\\Epaswmm5\\\\Epaswmm5.vrc\")",
+      "Bash(cmd.exe /c \"copy \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\IcebergClassico.vsf\\\\\" \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\FlatUILight.vsf\\\\\" && copy \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\LavenderClassico.vsf\\\\\" \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\WedgewoodLight.vsf\\\\\" && copy \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\Windows10.vsf\\\\\" \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\Windows10ClearDay.vsf\\\\\"\")",
+      "Bash(cmd.exe /c \"xcopy /Y \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\IcebergClassico.vsf\\\\\" \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\FlatUILight.vsf*\\\\\"\")",
+      "Skill(claude-api)"
+    ]
+  }
+}

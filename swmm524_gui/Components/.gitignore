@@ -1,0 +1,6 @@
+*.dcu
+*.bpl
+*.dcp
+Win32/
+Win64/
+__history/

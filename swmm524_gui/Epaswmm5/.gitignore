@@ -1,0 +1,7 @@
+*.vsf
+*.dcu
+*.res
+*.cfg
+*.identcache
+*.local
+__history/
