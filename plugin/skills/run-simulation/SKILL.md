@@ -7,7 +7,6 @@ Run the SWMM simulation using swmm_cli.
 
 ```bash
 swmm_cli simulate run --pid <pid>
-swmm_cli simulate wait --pid <pid> --timeout 300
 swmm_cli simulate status --pid <pid>
 ```
 

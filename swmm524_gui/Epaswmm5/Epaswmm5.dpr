@@ -111,7 +111,9 @@ uses
   Dstorage in 'Dstorage.pas' {StorageForm},
   Dculvert in 'Dculvert.pas' {CulvertSelectorForm},
   Uresults in 'Uresults.pas',
-  Dwelcome in 'Dwelcome.pas' {WelcomeForm};
+  Dwelcome in 'Dwelcome.pas' {WelcomeForm},
+  SwmmNamedPipe in 'Agent\SwmmNamedPipe.pas',
+  SwmmAgentAPI  in 'Agent\SwmmAgentAPI.pas';
 
 {$R *.RES}
 

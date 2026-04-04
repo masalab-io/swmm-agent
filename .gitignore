@@ -15,6 +15,11 @@ __pycache__/
 venv/
 build/
 
+# .NET
+cli/SwmmCli/bin/
+cli/SwmmCli/obj/
+cli/SwmmCli/publish/
+
 # NOTE: plugin/dist/ is intentionally tracked in git (distributable binaries)
 
 # SWMM runtime files

@@ -10,9 +10,9 @@ properties, run simulations, and retrieve results programmatically.
 
 ```bash
 # Example: agent reads a junction, changes its invert elevation, runs the model
-swmm_cli.py element get  --pid 1234 --type junction --id J1
-swmm_cli.py element set  --pid 1234 --type junction --id J1 --prop invert_elev --value 12.5
-swmm_cli.py simulate run --pid 1234
+swmm_cli element get  --pid 1234 --type junction --id J1
+swmm_cli element set  --pid 1234 --type junction --id J1 --prop invert_elev --value 12.5
+swmm_cli simulate run --pid 1234
 ```
 
 ## How It Works
@@ -66,7 +66,7 @@ python agent/swmm_agent.py "Run a sensitivity study varying J1 invert elevation 
 
 ```
 swmm524_gui/Epaswmm5/Agent/   New Delphi source (the only thing we add to SWMM)
-cli/                           Python CLI client (swmm_cli.py)
+cli/                           .NET CLI client (swmm_cli.exe)
 plugin/
   dist/                        Pre-built Epaswmm5.exe + runswmm.exe + swmm5.dll
   bin/                         swmm_cli (on PATH when plugin active)

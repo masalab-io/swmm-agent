@@ -26,9 +26,9 @@ swmm524_gui/              EPA SWMM 5.2.4 source (reference — do not modify exi
       SwmmNamedPipe.pas   Named pipe server thread (to be written)
     Epaswmm5.dpr          Project file — add new units here (minimal touch)
 
-cli/                      Python named pipe client
-  swmm_cli.py             CLI tool agents use via bash
-  requirements.txt        pywin32, click
+cli/                      .NET named pipe client
+  swmm_cli               CLI tool agents use via bash
+  requirements.txt        .NET 8, no runtime dependencies
 
 plugin/                   Claude Code plugin
   .claude-plugin/
@@ -45,7 +45,7 @@ plugin/                   Claude Code plugin
 
 agent/                    Agent SDK standalone app
   swmm_agent.py           Entry point for programmatic use
-  requirements.txt        anthropic, claude-agent-sdk
+  requirements.txt        anthropic>=0.40.0
 
 marketplace/              Claude Code marketplace definition
   .claude-plugin/
@@ -76,7 +76,7 @@ units to the `uses` clause. No other existing `.pas` files are changed.
 
 ```
 AI Agent
-  → bash: swmm_cli.py <cmd> --pid <pid>
+  → bash: swmm_cli <cmd> --pid <pid>
   → JSON over \\.\pipe\swmm_agent_{PID}
   → SwmmAgentAPI.pas (compiled into Epaswmm5.exe)
   → Project.GetNode() / MainForm.MnuProjectRunSimulationClick()

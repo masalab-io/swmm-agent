@@ -26,9 +26,9 @@ their `Epaswmm5.exe`. They keep using SWMM exactly as before.
 ```
 AI Agent (Claude Code / Agent SDK)
     │
-    │  bash: swmm_cli.py <command> [args] --pid <pid>
+    │  bash: swmm_cli <command> [args] --pid <pid>
     ▼
-swmm_cli.py  (thin Python CLI client)
+swmm_cli  (thin .NET CLI client)
     │
     │  JSON over Windows Named Pipe: \\.\pipe\swmm_agent_{PID}
     ▼
@@ -90,42 +90,41 @@ when SWMM launches — no other changes to existing files required.
 
 ### Process
 ```bash
-swmm_cli.py process list                          # list all running SWMM instances
+swmm_cli process list                          # list all running SWMM instances
 ```
 
 ### File
 ```bash
-swmm_cli.py file open   --pid <pid> --path model.inp
-swmm_cli.py file save   --pid <pid>
-swmm_cli.py file save-as --pid <pid> --path new.inp
+swmm_cli file open   --pid <pid> --path model.inp
+swmm_cli file save   --pid <pid>
+swmm_cli file save-as --pid <pid> --path new.inp
 ```
 
 ### Element
 ```bash
-swmm_cli.py element list   --pid <pid> --type junction
-swmm_cli.py element get    --pid <pid> --type junction --id J1
-swmm_cli.py element set    --pid <pid> --type junction --id J1 --prop invert_elev --value 10.5
-swmm_cli.py element add    --pid <pid> --type junction --id J2 --x 1000 --y 2000
-swmm_cli.py element delete --pid <pid> --type junction --id J1
+swmm_cli element list   --pid <pid> --type junction
+swmm_cli element get    --pid <pid> --type junction --id J1
+swmm_cli element set    --pid <pid> --type junction --id J1 --prop invert_elev --value 10.5
+swmm_cli element add    --pid <pid> --type junction --id J2 --x 1000 --y 2000
+swmm_cli element delete --pid <pid> --type junction --id J1
 ```
 
 ### Simulation
 ```bash
-swmm_cli.py simulate run    --pid <pid>
-swmm_cli.py simulate wait   --pid <pid> --timeout 300
-swmm_cli.py simulate status --pid <pid>
+swmm_cli simulate run    --pid <pid>
+swmm_cli simulate status --pid <pid>
 ```
 
 ### Results
 ```bash
-swmm_cli.py results get     --pid <pid> --type node --id J1 --variable depth
-swmm_cli.py results summary --pid <pid>
+swmm_cli results get     --pid <pid> --type node --id J1 --variable depth
+swmm_cli results summary --pid <pid>
 ```
 
 ### View
 ```bash
-swmm_cli.py view screenshot --pid <pid> --out snap.png
-swmm_cli.py view status-bar --pid <pid>
+swmm_cli view screenshot --pid <pid> --out snap.png
+swmm_cli view status-bar --pid <pid>
 ```
 
 ---

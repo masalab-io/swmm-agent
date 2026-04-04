@@ -7,7 +7,7 @@
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
-        <ProjectVersion>19.2</ProjectVersion>
+        <ProjectVersion>20.1</ProjectVersion>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">Epaswmm5</ProjectName>
     </PropertyGroup>
@@ -441,7 +441,6 @@ copy /Y "$(PROJECTDIR)bin\runswmm.exe" "$(OUTPUTDIR)"]]></PostBuildEvent>
                 <DeployFile LocalName="Win32\Epaswmm5.exe" Configuration="Release" Class="ProjectOutput"/>
                 <DeployFile LocalName="Win64\Epaswmm5.exe" Configuration="Release" Class="ProjectOutput"/>
                 <DeployFile LocalName="objprops.txt" Configuration="Release" Class="ProjectFile"/>
-                <DeployFile LocalName="viewvars.txt" Configuration="Release" Class="ProjectFile"/>
                 <DeployFile LocalName="viewvars.txt" Configuration="Release" Class="ProjectFile"/>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
@@ -1406,7 +1405,7 @@ copy /Y "$(PROJECTDIR)bin\runswmm.exe" "$(OUTPUTDIR)"]]></PostBuildEvent>
         <PreBuildEventIgnoreExitCode>False</PreBuildEventIgnoreExitCode>
         <PreLinkEvent/>
         <PreLinkEventIgnoreExitCode>False</PreLinkEventIgnoreExitCode>
-        <PostBuildEvent>if not exist &quot;$(OUTPUTDIR)&quot; mkdir &quot;$(OUTPUTDIR)&quot;&amp;&amp;copy /Y &quot;$(PROJECTDIR)bin\swmm5.dll&quot; &quot;$(OUTPUTDIR)&quot;&amp;&amp;copy /Y &quot;$(PROJECTDIR)bin\runswmm.exe&quot; &quot;$(OUTPUTDIR)&quot;</PostBuildEvent>
+        <PostBuildEvent>if not exist &quot;$(OUTPUTDIR)&quot; mkdir &quot;$(OUTPUTDIR)&quot;&amp;&amp;copy /Y &quot;$(PROJECTDIR)bin\swmm5.dll&quot; &quot;$(OUTPUTDIR)&quot;&amp;&amp;copy /Y &quot;$(PROJECTDIR)bin\runswmm.exe&quot; &quot;$(OUTPUTDIR)&quot;</PostBuildEvent>
         <PostBuildEventIgnoreExitCode>False</PostBuildEventIgnoreExitCode>
     </PropertyGroup>
 </Project>
