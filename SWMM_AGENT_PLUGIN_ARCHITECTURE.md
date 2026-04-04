@@ -1,15 +1,30 @@
-# SWMM Agent Plugin — Architecture Document
+# SWMM Agent — Architecture
 
 ## Goal
 
-Enable AI agents (Claude Code or any bash-capable agent) to control the EPA SWMM 5.2.4 GUI desktop application programmatically — reading model data, editing element properties, running simulations, and retrieving results — without modifying the official SWMM installation.
+Enable AI agents (Claude Code or any bash-capable agent) to control the EPA SWMM 5.2.4 GUI
+programmatically — reading model data, editing element properties, running simulations, and
+retrieving results.
 
 ---
 
-## High-Level Architecture
+## Approach
+
+Add new Delphi source files to the existing SWMM GUI project. Compile the project normally.
+The resulting `Epaswmm5.exe` is a drop-in replacement for the official EPA binary — identical
+in every way except it also starts a named pipe server on launch that accepts JSON commands.
+
+No DLL injection. No loader. No runtime tricks. Just a recompiled exe.
+
+Users download the source, build once with Delphi Community Edition (free), and replace
+their `Epaswmm5.exe`. They keep using SWMM exactly as before.
+
+---
+
+## Architecture
 
 ```
-AI Agent (Claude Code)
+AI Agent (Claude Code / Agent SDK)
     │
     │  bash: swmm_cli.py <command> [args] --pid <pid>
     ▼
@@ -17,254 +32,160 @@ swmm_cli.py  (thin Python CLI client)
     │
     │  JSON over Windows Named Pipe: \\.\pipe\swmm_agent_{PID}
     ▼
-swmm_plugin.dll  (Delphi DLL, injected into epaswmm5.exe)
+SwmmAgentAPI.pas  (compiled into Epaswmm5.exe)
     │
     │  direct in-process Delphi calls
     ▼
-Project.GetNode(...).Data[prop] := value
-MainForm.MnuProjectRunSimulationClick(nil)
-```
-
-The agent never knows about named pipes or Delphi internals. It calls `swmm_cli.py` via bash and receives JSON back — exactly like calling `git` or `curl`.
-
----
-
-## Components
-
-### 1. `swmm_plugin.dll` — Delphi DLL (in-process)
-
-- Written in **Embarcadero Delphi 10.4** (same version as SWMM GUI)
-- Injected into the running `epaswmm5.exe` process by the loader
-- Starts a **Windows Named Pipe server** on startup: `\\.\pipe\swmm_agent_{PID}`
-- Listens for JSON commands, executes them directly against SWMM internals, returns JSON responses
-- Has direct access to:
-  - `Project` — the live `TProject` object with all model data in memory
-  - `MainForm` — can call any menu handler (e.g. `MnuProjectRunSimulationClick`)
-  - All element lists, properties, themes, results
-
-**Initialization:**
-```pascal
-// Exported function called by the loader after injection
-procedure swmm_plugin_init(AppHandle: THandle; MainFormPtr: Pointer); stdcall;
-```
-
-### 2. `swmm_agent_loader.exe` — Delphi or C injector
-
-- Small standalone executable
-- Attaches to a running `epaswmm5.exe` process
-- Injects `swmm_plugin.dll` via `CreateRemoteThread` + `LoadLibrary`
-- Exits immediately — plugin stays resident in SWMM
-- Can target a specific PID or auto-detect SWMM windows
-
-### 3. `swmm_cli.py` — Python CLI client
-
-- Thin named pipe client (~300-500 lines)
-- Serializes CLI arguments to JSON, sends to plugin, prints response to stdout
-- Exit code 0 = success, 1 = error
-- All output is JSON
-
-**Dependencies:**
-```
-pywin32   — named pipe client (win32pipe, win32file)
-click     — CLI argument parsing
+Project.GetNode(...)  /  MainForm.MnuProjectRunSimulationClick(nil)
 ```
 
 ---
 
-## User Workflow
+## New Files (do not modify existing files)
 
-```
-1. Open SWMM normally (unchanged, unmodified installation)
-2. Run swmm_agent_loader.exe  (or use the SWMM Tools menu entry)
-3. Plugin is now resident — named pipe server is running
-4. swmm_cli.py commands now work
-```
+All new code lives in `swmm524_gui/Epaswmm5/Agent/`:
 
-### Bootstrap via SWMM's Built-in Tools Menu
+| File | Purpose |
+|---|---|
+| `SwmmNamedPipe.pas` | Named pipe server — background thread, listens for JSON commands |
+| `SwmmAgentAPI.pas` | API handlers — parses commands, calls SWMM internals, returns JSON |
 
-SWMM has a built-in external tools system (Tools → Tool Options). Register the loader there so users can activate the plugin with one click inside SWMM:
-
-```
-Tool Name:    SWMM Agent
-Program:      C:\swmm-agent\swmm_agent_loader.exe
-Parameters:   (empty)
-Disable SWMM: unchecked (loader exits immediately, SWMM keeps running)
-```
+To wire them in, add both units to the `uses` clause in `Epaswmm5.dpr` (the project file).
+The `initialization` section in `SwmmAgentAPI.pas` starts the pipe server thread automatically
+when SWMM launches — no other changes to existing files required.
 
 ---
 
-## Multiple Instances
+## Named Pipe Protocol
 
-When multiple SWMM windows are open, the agent first lists all instances and targets by PID:
+- Pipe name: `\\.\pipe\swmm_agent_{PID}`
+- One pipe per running SWMM instance (supports multiple open windows)
+- Newline-delimited JSON: one JSON object per request, one JSON object per response
+- Synchronous: client sends request, waits for response, pipe stays open
 
-```bash
-# List all running SWMM instances
-swmm_cli.py process list
-```
+**Request format:**
 ```json
-[
-  {"index": 0, "pid": 12345, "title": "model_v1.inp - SWMM 5", "file": "C:/models/model_v1.inp"},
-  {"index": 1, "pid": 67890, "title": "model_v2.inp - SWMM 5", "file": "C:/models/model_v2.inp"}
-]
+{"cmd": "element.get", "type": "junction", "id": "J1"}
 ```
 
-All subsequent commands take `--pid`:
-```bash
-swmm_cli.py simulate run --pid 67890
+**Response format:**
+```json
+{"ok": true, "data": {"id": "J1", "invert_elev": "10.5", "max_depth": "3.0", "x": 1000.0, "y": 2000.0}}
+{"ok": false, "error": "Node J1 not found"}
 ```
-
-Each SWMM instance has its own named pipe (`swmm_agent_12345`, `swmm_agent_67890`).
 
 ---
 
-## CLI Command Reference
+## Commands (Phase 1 — 3 functions)
 
-### Process Management
+| Command | Action |
+|---|---|
+| `element.get` | Look up node by ID, return properties as JSON |
+| `element.set` | Write a single property value to a node |
+| `simulate.run` | Call `MainForm.MnuProjectRunSimulationClick(nil)`, return run status |
+
+---
+
+## Commands (Full)
+
+### Process
 ```bash
 swmm_cli.py process list                          # list all running SWMM instances
-swmm_cli.py process launch --path model.inp       # launch new SWMM with file
 ```
 
-### File Operations
+### File
 ```bash
 swmm_cli.py file open   --pid <pid> --path model.inp
 swmm_cli.py file save   --pid <pid>
-swmm_cli.py file save-as --pid <pid> --path new_model.inp
-swmm_cli.py file reload --pid <pid>               # close and reopen current file
+swmm_cli.py file save-as --pid <pid> --path new.inp
 ```
 
-### Element Operations
+### Element
 ```bash
-swmm_cli.py element list         --pid <pid> --type junction
-swmm_cli.py element get          --pid <pid> --type junction --id J1
-swmm_cli.py element set          --pid <pid> --type junction --id J1 --prop invert_elev --value 10.5
-swmm_cli.py element add          --pid <pid> --type junction --id J2 --x 1000 --y 2000
-swmm_cli.py element delete       --pid <pid> --type junction --id J1
+swmm_cli.py element list   --pid <pid> --type junction
+swmm_cli.py element get    --pid <pid> --type junction --id J1
+swmm_cli.py element set    --pid <pid> --type junction --id J1 --prop invert_elev --value 10.5
+swmm_cli.py element add    --pid <pid> --type junction --id J2 --x 1000 --y 2000
+swmm_cli.py element delete --pid <pid> --type junction --id J1
 ```
-
-**Element types:** `junction`, `outfall`, `storage`, `divider`, `conduit`, `pump`, `orifice`, `weir`, `outlet`, `subcatchment`, `raingage`
 
 ### Simulation
 ```bash
 swmm_cli.py simulate run    --pid <pid>
-swmm_cli.py simulate wait   --pid <pid> --timeout 300    # blocks until complete
+swmm_cli.py simulate wait   --pid <pid> --timeout 300
 swmm_cli.py simulate status --pid <pid>
 ```
 
 ### Results
 ```bash
-swmm_cli.py results get --pid <pid> --type node --id J1 --variable depth
-swmm_cli.py results summary --pid <pid>           # reads .rpt file directly
+swmm_cli.py results get     --pid <pid> --type node --id J1 --variable depth
+swmm_cli.py results summary --pid <pid>
 ```
 
-### Map / Visual
+### View
 ```bash
-swmm_cli.py view screenshot   --pid <pid> --out /tmp/swmm.png
-swmm_cli.py view theme-set    --pid <pid> --layer nodes --variable depth --ramp "Blue-Red"
-swmm_cli.py view status-bar   --pid <pid>          # read status bar text
+swmm_cli.py view screenshot --pid <pid> --out snap.png
+swmm_cli.py view status-bar --pid <pid>
 ```
 
 ---
 
-## What the Plugin Does Internally
+## Delphi Internals Used
 
-| CLI Command | Plugin Action |
+| Command | Delphi access |
 |---|---|
-| `element get` | `Project.GetNode(type, idx).Data[prop_index]` |
-| `element set` | Direct memory write to `TNode.Data[prop_index]` |
-| `element list` | Iterate `Project.Lists[type]` |
-| `simulate run` | Call `MainForm.MnuProjectRunSimulationClick(nil)` |
-| `simulate status` | Read `RunStatus` global variable |
-| `view theme-set` | Call map viewer theme procedures directly |
-| `results get` | Read binary `.out` file via `Uoutput.pas` logic |
+| `element.get` | `Project.FindNode(id, ntype, idx)` → `Project.GetNode(ntype, idx)` → `.ID`, `.X`, `.Y`, `.Data[NODE_INVERT_INDEX]` |
+| `element.set` | same lookup → `node.Data[prop_index] := value` |
+| `element.list` | iterate `Project.Lists[type]` |
+| `simulate.run` | `MainForm.MnuProjectRunSimulationClick(nil)` |
+| `simulate.status` | read `RunStatus` global (`TRunStatus` enum) |
+| `results.get` | read binary `.out` file via `Uoutput.pas` logic |
+
+Key constants (from `Uproject.pas`):
+- `NODE_INVERT_INDEX = 7`
+- `JUNCTION_MAX_DEPTH_INDEX = 8`
+- `CONDUIT_LENGTH_INDEX = 7`
+- `CONDUIT_ROUGHNESS_INDEX = 8`
 
 ---
 
-## Why Not pywinauto?
+## Two Ways Agents Use This
 
-| | pywinauto | This plugin |
-|---|---|---|
-| Element property edit | INP file round-trip | Direct in-memory |
-| Theme / visual change | Dialog navigation (fragile) | Direct property set |
-| Speed | Slow (UI timing delays) | Instant |
-| Reliability | Fragile (dialogs, timing) | Solid |
-| Needs SWMM source? | No | No (injection, no source mod) |
+### 1. Claude Code Plugin (`plugin/`)
 
----
+Engineers using Claude Code interactively. Skills auto-invoke `swmm_cli` via the Bash tool.
+`swmm_cli` is on PATH via the plugin's `bin/` directory.
 
-## Claude API Integration (Optional)
+```
+/swmm-agent:attach        ← one-time setup
+[Claude auto-uses skills mid-task]
+```
 
-`claude-opus-4-6` with vision can be used for two purposes:
+### 2. Agent SDK App (`agent/`)
 
-**1. Screenshot verification after actions:**
+Programmatic / automated use. A Python script drives `claude-opus-4-6` with the Bash tool
+and a system prompt describing the available `swmm_cli` commands.
+
 ```bash
-swmm_cli.py view screenshot --pid 12345 --out /tmp/swmm.png
-# → send to Claude API: "Did the file open? Any blocking dialog?"
-# → returns {"success": true, "dialog": null}
-```
-
-**2. Natural language → command routing:**
-```
-User: "Add a junction at the river crossing"
-→ Claude API (adaptive thinking) plans the sequence:
-  1. swmm_cli.py view screenshot
-  2. swmm_cli.py element add --type junction ...
-  3. swmm_cli.py view screenshot → verify
-```
-
-Enable with `--verify` flag on any command:
-```bash
-swmm_cli.py file open --path model.inp --pid 12345 --verify
-# → automatically takes screenshot + calls Claude API to confirm success
+python agent/swmm_agent.py "Run a sensitivity study on J1 invert elevation"
 ```
 
 ---
 
-## Skill Files Structure
+## Build Instructions
 
-Document each compound operation as a markdown skill file so Claude Code can find and use the right command sequences:
+1. Install **Delphi Community Edition** (free — [embarcadero.com](https://www.embarcadero.com/products/delphi/starter))
+2. Open `swmm524_gui/Epaswmm5/Epaswmm5.dproj`
+3. Build → `swmm524_gui/Epaswmm5/Build/Win32/Epaswmm5.exe`
+4. Replace your existing `Epaswmm5.exe` with the compiled one
 
-```
-skills/swmm-gui/
-├── _commands.md          # Full CLI reference (auto-generated from --help)
-├── launch.md             # How to start/attach to SWMM + load plugin
-├── open-model.md         # Open INP file
-├── run-simulation.md     # Run + wait for completion + get summary
-├── add-junction.md       # Add junction: element add → set properties
-├── add-conduit.md        # Add conduit connecting two nodes
-├── edit-properties.md    # Edit element properties
-├── read-results.md       # Get simulation results for elements
-└── set-theme.md          # Change map visualization theme
-```
+The pipe server starts automatically when SWMM launches. No additional setup.
 
 ---
 
-## Tech Stack
+## What This Is NOT
 
-| Component | Technology | License |
-|---|---|---|
-| `swmm_plugin.dll` | Delphi 10.4 Community Edition | Free for open source |
-| `swmm_agent_loader.exe` | Delphi or C | Free |
-| `swmm_cli.py` | Python 3.x + pywin32 + click | MIT |
-| SWMM GUI source | Object Pascal (EPA) | Public domain |
-| SWMM engine | `swmm5.dll` C API | Public domain |
-
-**Delphi Community Edition** is free for open source projects (OSI-approved license). No paid license required.
-
----
-
-## What You Are NOT Doing
-
-- **Not modifying** `epaswmm5.exe` or any EPA files — users keep their official SWMM installation
-- **Not rewriting** the SWMM GUI in C# (estimated 1-2 years, not worth it for this goal)
-- **Not using pywinauto** (fragile, slow, requires dialog navigation)
-- **Not requiring** an MCP server (too token-heavy for agents)
-
----
-
-## Open Questions / Future Work
-
-- Code-sign the binaries to avoid antivirus false positives (DLL injection is a common malware technique — signing + documentation helps)
-- Define the full property index mapping for all element types (from `Uproject.pas` `objprops.txt`)
-- Decide named pipe protocol: newline-delimited JSON vs. length-prefixed frames
-- Consider a simple HTTP server alternative to named pipes (easier to debug, language-agnostic)
+- Not modifying any existing `.pas` files
+- Not DLL injection
+- Not a separate loader process
+- Not a commercial product — open source, build from source
