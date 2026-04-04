@@ -38,13 +38,18 @@ No DLL injection. No separate loader. SWMM works exactly as before, plus the pip
 
 ## Use with Claude Code
 
-Install the plugin:
+Install the plugin (this also downloads the pre-built SWMM exe):
 ```
 /plugin marketplace add masalab/swmm-agent
 /plugin install swmm-agent@masalab
 ```
 
-Then in any Claude Code session with SWMM open:
+Install the exe into your SWMM folder (one-time setup):
+```
+/swmm-agent:install
+```
+
+Then launch SWMM normally and connect:
 ```
 /swmm-agent:attach
 ```
@@ -60,9 +65,13 @@ python agent/swmm_agent.py "Run a sensitivity study varying J1 invert elevation 
 ## Project Structure
 
 ```
-swmm524_gui/Epaswmm5/Agent/   New Delphi source (the only thing we add)
+swmm524_gui/Epaswmm5/Agent/   New Delphi source (the only thing we add to SWMM)
 cli/                           Python CLI client (swmm_cli.py)
-plugin/                        Claude Code plugin
+plugin/
+  dist/                        Pre-built Epaswmm5.exe + runswmm.exe + swmm5.dll
+  bin/                         swmm_cli (on PATH when plugin active)
+  skills/                      Model-invoked Claude skills
+  commands/                    User slash commands (install, attach)
 agent/                         Agent SDK standalone app
 marketplace/                   Claude Code marketplace definition
 ```

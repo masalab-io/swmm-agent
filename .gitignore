@@ -1,18 +1,11 @@
-# Delphi build output
-delphi/*.dcu
-delphi/*.dcp
-delphi/*.exe
-delphi/*.dll
-delphi/__history/
-delphi/Win32/
-delphi/Win64/
-
-# Loader build output
-loader/*.dcu
-loader/*.exe
-loader/__history/
-loader/Win32/
-loader/Win64/
+# Delphi build output (swmm524_gui project)
+swmm524_gui/Epaswmm5/Build/
+swmm524_gui/Epaswmm5/__history/
+swmm524_gui/Epaswmm5/__recovery/
+swmm524_gui/Epaswmm5/*.dcu
+swmm524_gui/Epaswmm5/Agent/*.dcu
+swmm524_gui/Components/__history/
+swmm524_gui/Components/*.dcu
 
 # Python
 __pycache__/
@@ -20,15 +13,16 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
-dist/
 build/
+
+# NOTE: plugin/dist/ is intentionally tracked in git (distributable binaries)
 
 # SWMM runtime files
 *.rpt
 *.out
 *.hsf
 
-# Large archives — reference source is in swmm524_gui/
+# Large archives
 swmm524_gui.zip
 
 # OS

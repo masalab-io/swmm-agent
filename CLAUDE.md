@@ -33,9 +33,15 @@ cli/                      Python named pipe client
 plugin/                   Claude Code plugin
   .claude-plugin/
     plugin.json
+  dist/                   Pre-built binaries shipped with the plugin
+    Epaswmm5.exe          Augmented SWMM exe (compiled from this repo)
+    runswmm.exe           SWMM dependency
+    swmm5.dll             SWMM engine
   bin/                    swmm_cli goes here (added to PATH when plugin active)
   skills/                 Model-invoked skills
-  commands/               User-invoked slash commands
+  commands/
+    swmm-install.md       Copies dist/ files into user's SWMM install folder
+    swmm-attach.md        Connects to a running SWMM instance
 
 agent/                    Agent SDK standalone app
   swmm_agent.py           Entry point for programmatic use
@@ -47,6 +53,15 @@ marketplace/              Claude Code marketplace definition
 ```
 
 ---
+
+## Distribution
+
+The 3 files in `plugin/dist/` are the distributable binaries. They are tracked in git
+(not gitignored). After every build, copy the new exe from
+`swmm524_gui/Epaswmm5/Build/Win32/` into `plugin/dist/` and commit.
+
+Users never download files manually — `/swmm-agent:install` copies `plugin/dist/` into
+their SWMM installation folder automatically.
 
 ## The Rule: Never Modify Existing Files
 

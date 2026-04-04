@@ -1,24 +1,16 @@
 ---
-description: Attach the SWMM Agent plugin to a running SWMM instance. Run this once before using any SWMM skills.
+description: Connect to a running SWMM instance. Run this once per session before using any SWMM skills.
 ---
 
-Attach the SWMM Agent to a running SWMM 5.2.4 process.
+Connect to a running SWMM 5.2.4 process.
 
 1. List running SWMM instances:
 ```bash
 swmm_cli process list
 ```
 
-2. If no instances found, ask the user to open SWMM first.
+2. If no instances found, tell the user: "Please open EPA SWMM 5.2.4 first, then run this command again."
 
-3. If the plugin is not yet injected, run the loader:
-```bash
-swmm_agent_loader.exe
-```
+3. If instances are found, report them to the user — show the PID and the open file name for each.
 
-4. Confirm the connection:
-```bash
-swmm_cli process list
-```
-
-Report which SWMM instance(s) are now available and their PIDs. The user can now use SWMM skills.
+Tell the user they can now use SWMM skills. The PID will be used automatically in subsequent commands.
