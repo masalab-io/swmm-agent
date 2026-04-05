@@ -2,40 +2,6 @@
 
 Control EPA SWMM 5.2.4 from AI agents (Claude Code, Agent SDK, or any bash-capable tool).
 
-## What It Does
-
-Adds a JSON command interface to the SWMM GUI. Once built, the SWMM executable accepts
-commands over a Windows named pipe — so an AI agent can read and write model element
-properties, run simulations, and retrieve results programmatically.
-
-```bash
-# Example: agent reads a junction, changes its invert elevation, runs the model
-swmm_cli element get  --pid 1234 --type junction --id J1
-swmm_cli element set  --pid 1234 --type junction --id J1 --prop invert_elev --value 12.5
-swmm_cli simulate run --pid 1234
-```
-
-## How It Works
-
-Two new Delphi source files are compiled into the existing SWMM project:
-
-- `SwmmAgentAPI.pas` — handles JSON commands, calls SWMM internals directly
-- `SwmmNamedPipe.pas` — runs a background thread listening on `\\.\pipe\swmm_agent_{PID}`
-
-The resulting `Epaswmm5.exe` is a drop-in replacement for the official EPA binary.
-No DLL injection. No separate loader. SWMM works exactly as before, plus the pipe server.
-
-## Build
-
-**Requirements:** [Delphi Community Edition](https://www.embarcadero.com/products/delphi/starter) (free)
-
-```
-1. Clone this repo
-2. Open swmm524_gui/Epaswmm5/Epaswmm5.dproj in Delphi
-3. Build (Ctrl+F9)
-4. Run build.bat — copies binaries into plugin/dist/ and signs them
-```
-
 ## Use with Claude Code
 
 > **Requires:** Claude Code, Windows 10/11. No SWMM installation needed — the plugin ships the exe.
@@ -96,6 +62,40 @@ Claude will automatically use SWMM skills whenever relevant:
 > *"What's the invert elevation of junction J5?"*
 > *"Raise all junction inverts in the north basin by 0.5 m and re-run the simulation"*
 > *"What was the peak flow at conduit C3 in the last run?"*
+
+## What It Does
+
+Adds a JSON command interface to the SWMM GUI. Once built, the SWMM executable accepts
+commands over a Windows named pipe — so an AI agent can read and write model element
+properties, run simulations, and retrieve results programmatically.
+
+```bash
+# Example: agent reads a junction, changes its invert elevation, runs the model
+swmm_cli element get  --pid 1234 --type junction --id J1
+swmm_cli element set  --pid 1234 --type junction --id J1 --prop invert_elev --value 12.5
+swmm_cli simulate run --pid 1234
+```
+
+## How It Works
+
+Two new Delphi source files are compiled into the existing SWMM project:
+
+- `SwmmAgentAPI.pas` — handles JSON commands, calls SWMM internals directly
+- `SwmmNamedPipe.pas` — runs a background thread listening on `\\.\pipe\swmm_agent_{PID}`
+
+The resulting `Epaswmm5.exe` is a drop-in replacement for the official EPA binary.
+No DLL injection. No separate loader. SWMM works exactly as before, plus the pipe server.
+
+## Build
+
+**Requirements:** [Delphi Community Edition](https://www.embarcadero.com/products/delphi/starter) (free)
+
+```
+1. Clone this repo
+2. Open swmm524_gui/Epaswmm5/Epaswmm5.dproj in Delphi
+3. Build (Ctrl+F9)
+4. Run build.bat — copies binaries into plugin/dist/ and signs them
+```
 
 ## Use Programmatically (Agent SDK)
 
