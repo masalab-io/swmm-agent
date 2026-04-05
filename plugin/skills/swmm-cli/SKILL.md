@@ -19,6 +19,22 @@ Exit code 0 = success, 1 = error.
 
 ---
 
+## Invoking swmm_cli
+
+Claude Code v2.1.92+ automatically adds the plugin `bin/` directory to PATH,
+so `swmm_cli` works as a bare command. On older versions it is not on PATH.
+
+**Always invoke using the full path via `${CLAUDE_PLUGIN_ROOT}`:**
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process list
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process launch
+```
+
+Do **not** glob or search for the exe — `${CLAUDE_PLUGIN_ROOT}` is always set
+correctly by Claude Code when the plugin is active.
+
+---
 
 ## Session setup — do this at the start of every SWMM session
 
@@ -27,17 +43,17 @@ process is running and attached:
 
 ```bash
 # 1. Check if SWMM is already running
-swmm_cli process list
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process list
 
 # 2a. If no process found — launch it, then wait for the pipe to become available
-swmm_cli process launch
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process launch
 # repeat process list until available=true (pipe is ready, ~2–5 seconds)
 
 # 2b. If process found but not attached yet — save the session
-swmm_cli attach <pid>
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" attach <pid>
 
 # 3. Verify a file is open before touching elements or results
-swmm_cli file info
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" file info
 ```
 
 Once `attach` has been run, all subsequent commands resolve the PID
@@ -76,8 +92,8 @@ multiple simultaneous SWMM instances.
 ### process — manage the SWMM process
 
 ```
-swmm_cli process launch
-swmm_cli process list
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process launch
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process list
 ```
 
 | Command | What it does | Returns |
@@ -88,7 +104,7 @@ swmm_cli process list
 ### attach — persist a session
 
 ```
-swmm_cli attach <pid>
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" attach <pid>
 ```
 
 | Command | What it does | Returns |
@@ -98,8 +114,8 @@ swmm_cli attach <pid>
 ### file — open and inspect the model file
 
 ```
-swmm_cli file info  [--pid N]
-swmm_cli file open  --path <path>  [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" file info  [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" file open  --path <path>  [--pid N]
 ```
 
 | Command | What it does | Returns |
@@ -110,10 +126,10 @@ swmm_cli file open  --path <path>  [--pid N]
 ### element — read, write, and add model elements
 
 ```
-swmm_cli element list  --type <type>                                   [--pid N]
-swmm_cli element get   --type <type>  --id <id>                        [--pid N]
-swmm_cli element set   --type <type>  --id <id>  --prop <p> --value <v> [--pid N]
-swmm_cli element add   --type <type>  --id <id>  [--x N]  [--y N]     [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" element list  --type <type>                                   [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" element get   --type <type>  --id <id>                        [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" element set   --type <type>  --id <id>  --prop <p> --value <v> [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" element add   --type <type>  --id <id>  [--x N]  [--y N]     [--pid N]
 ```
 
 | Command | What it does | Returns |
@@ -129,8 +145,8 @@ Valid `--type` values: `junction`, `outfall`, `divider`, `storage`, `conduit`,
 ### simulate — run and monitor the simulation
 
 ```
-swmm_cli simulate run     [--pid N]
-swmm_cli simulate status  [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" simulate run     [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" simulate status  [--pid N]
 ```
 
 | Command | What it does | Returns |
@@ -141,8 +157,8 @@ swmm_cli simulate status  [--pid N]
 ### results — retrieve output after a simulation
 
 ```
-swmm_cli results get      --type <type>  --id <id>  --variable <var>  [--pid N]
-swmm_cli results summary  --type <type>  --id <id>                    [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" results get      --type <type>  --id <id>  --variable <var>  [--pid N]
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" results summary  --type <type>  --id <id>                    [--pid N]
 ```
 
 | Command | What it does | Returns |
