@@ -56,3 +56,4 @@ Thumbs.db
 .idea/
 *.suo
 *.user
+plugin/bin/swmm_cli.pdb
