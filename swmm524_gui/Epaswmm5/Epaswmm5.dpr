@@ -112,8 +112,15 @@ uses
   Dculvert in 'Dculvert.pas' {CulvertSelectorForm},
   Uresults in 'Uresults.pas',
   Dwelcome in 'Dwelcome.pas' {WelcomeForm},
-  SwmmNamedPipe in 'Agent\SwmmNamedPipe.pas',
-  SwmmAgentAPI  in 'Agent\SwmmAgentAPI.pas';
+  SwmmAgentConfig       in 'Agent\SwmmAgentConfig.pas',
+  SwmmNamedPipe         in 'Agent\SwmmNamedPipe.pas',
+  SwmmAgentAPI          in 'Agent\SwmmAgentAPI.pas',
+  SwmmJsonUtils         in 'Agent\SwmmJsonUtils.pas',
+  SwmmElementSchema     in 'Agent\SwmmElementSchema.pas',
+  SwmmElementCommands   in 'Agent\SwmmElementCommands.pas',
+  SwmmSimulateCommands  in 'Agent\SwmmSimulateCommands.pas',
+  SwmmFileCommands      in 'Agent\SwmmFileCommands.pas',
+  SwmmResultsCommands   in 'Agent\SwmmResultsCommands.pas';
 
 {$R *.RES}
 
