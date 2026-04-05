@@ -40,8 +40,8 @@ No DLL injection. No separate loader. SWMM works exactly as before, plus the pip
 
 Install the plugin (includes the pre-built SWMM exe):
 ```
-/plugin marketplace add masalab/swmm
-/plugin install swmm@masalab
+/plugin marketplace add chaitanyalakeshri/SwmmXClaudeCode
+/plugin install swmm@chaitanyalakeshri
 ```
 
 Launch SWMM and connect:
