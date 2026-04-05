@@ -57,3 +57,4 @@ Thumbs.db
 *.suo
 *.user
 plugin/bin/swmm_cli.pdb
+.claude/settings.local.json
