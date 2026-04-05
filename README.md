@@ -38,19 +38,53 @@ No DLL injection. No separate loader. SWMM works exactly as before, plus the pip
 
 ## Use with Claude Code
 
-Install the plugin (includes the pre-built SWMM exe):
+> **Requires:** Claude Code, Windows 10/11. No SWMM installation needed — the plugin ships the exe.
+
+### 1. Add the marketplace (once)
+
 ```
 /plugin marketplace add chaitanyalakeshri/SwmmXClaudeCode
-/plugin install swmm@chaitanyalakeshri
 ```
 
-Launch SWMM and connect:
+### 2. Install the plugin
+
+Run `/plugin`, go to **Discover**, find **swmm**, and choose your scope:
+- **User** — available in all your projects
+- **Project** — available to everyone who clones this repo
+- **Local** — just for you in this repo
+
+Or install directly:
+```
+/plugin install swmm@chaitanyalakeshri-SwmmXClaudeCode
+```
+
+### 3. Activate
+
+```
+/reload-plugins
+```
+
+### 4. Start a SWMM session
+
 ```bash
+# Launch the bundled Epaswmm5.exe
 swmm_cli process launch
+
+# Wait ~3 seconds for the pipe to be ready, then attach
+swmm_cli process list          # note the pid
 swmm_cli attach <pid>
+
+# Open your model
+swmm_cli file open --path "C:\path\to\your\model.inp"
 ```
 
-Claude will auto-use SWMM skills when relevant to your task.
+### 5. Ask Claude
+
+Claude will automatically use SWMM skills whenever relevant:
+
+> *"What's the invert elevation of junction J5?"*
+> *"Raise all junction inverts in the north basin by 0.5 m and re-run the simulation"*
+> *"What was the peak flow at conduit C3 in the last run?"*
 
 ## Use Programmatically (Agent SDK)
 
