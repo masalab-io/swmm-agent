@@ -1,5 +1,5 @@
 {
-  "name": "swmm-agent",
+  "name": "swmm",
   "description": "Control EPA SWMM 5.2.4 GUI from Claude Code — read/write model elements, run simulations, retrieve results",
   "version": "0.1.0",
   "author": {
@@ -7,8 +7,5 @@
   },
   "homepage": "https://github.com/masalab/swmm-agent",
   "repository": "https://github.com/masalab/swmm-agent",
-  "license": "MIT",
-  "bin": "bin",
-  "skills": "skills",
-  "commands": "commands"
+  "license": "MIT"
 }

@@ -38,18 +38,14 @@ plugin/                   Claude Code plugin
     runswmm.exe           SWMM dependency
     swmm5.dll             SWMM engine
   bin/                    swmm_cli goes here (added to PATH when plugin active)
-  skills/                 Model-invoked skills
-  commands/
-    swmm-install.md       Copies dist/ files into user's SWMM install folder
-    swmm-attach.md        Connects to a running SWMM instance
+  skills/swmm-cli/        Master skill + per-command reference docs
 
 agent/                    Agent SDK standalone app
   swmm_agent.py           Entry point for programmatic use
   requirements.txt        anthropic>=0.40.0
 
-marketplace/              Claude Code marketplace definition
-  .claude-plugin/
-    marketplace.json
+.claude-plugin/           Claude Code marketplace definition
+  marketplace.json
 ```
 
 ---
@@ -60,8 +56,8 @@ The 3 files in `plugin/dist/` are the distributable binaries. They are tracked i
 (not gitignored). After every build, copy the new exe from
 `swmm524_gui/Epaswmm5/Build/Win32/` into `plugin/dist/` and commit.
 
-Users never download files manually — `/swmm-agent:install` copies `plugin/dist/` into
-their SWMM installation folder automatically.
+Users never download files manually. `swmm_cli process launch` runs `Epaswmm5.exe`
+directly from `plugin/dist/` — no copy to the user's SWMM folder required.
 
 ## The Rule: Never Modify Existing Files
 
@@ -107,9 +103,9 @@ When writing new Delphi code, use these (from existing source — do not redefin
 
 ## Current Status
 
-Phase 1 — writing the first 3 API functions:
-1. `element.get` — read node properties
-2. `element.set` — write a node property
-3. `simulate.run` — trigger simulation
+Phase 1 complete — the named-pipe API and CLI are fully implemented:
+- All 13 `swmm_cli` commands are working (`process`, `attach`, `file`, `element`, `simulate`, `results`)
+- `SwmmAgentAPI.pas` and `SwmmNamedPipe.pas` are compiled into `Epaswmm5.exe`
+- Claude Code plugin ships in `plugin/` with master skill and per-command reference docs
 
-Files to create: `SwmmAgentAPI.pas`, `SwmmNamedPipe.pas`
+Next: Phase 2 — additional element types, write-back for links/subcatchments, geometry layer.

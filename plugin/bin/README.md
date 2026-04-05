@@ -1,10 +1,5 @@
 # plugin/bin/
 
-Place `swmm_cli.exe` here after building the .NET CLI project.
+Contains `swmm_cli.exe` — added to PATH automatically when the plugin is active.
 
-Build command (from repo root):
-```
-dotnet publish cli/SwmmCli/SwmmCli.csproj -r win-x64 --self-contained true -p:PublishSingleFile=true -o plugin/bin/
-```
-
-This directory is on PATH when the plugin is active.
+Built and deployed automatically by `build.bat` (via the MSBuild post-publish target in `cli/SwmmCli/SwmmCli.csproj`).

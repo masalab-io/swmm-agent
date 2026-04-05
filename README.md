@@ -33,25 +33,21 @@ No DLL injection. No separate loader. SWMM works exactly as before, plus the pip
 1. Clone this repo
 2. Open swmm524_gui/Epaswmm5/Epaswmm5.dproj in Delphi
 3. Build (Ctrl+F9)
-4. Replace your Epaswmm5.exe with the one in Build/Win32/
+4. Run build.bat — copies binaries into plugin/dist/ and signs them
 ```
 
 ## Use with Claude Code
 
-Install the plugin (this also downloads the pre-built SWMM exe):
+Install the plugin (includes the pre-built SWMM exe):
 ```
-/plugin marketplace add masalab/swmm-agent
-/plugin install swmm-agent@masalab
-```
-
-Install the exe into your SWMM folder (one-time setup):
-```
-/swmm-agent:install
+/plugin marketplace add masalab/swmm
+/plugin install swmm@masalab
 ```
 
-Then launch SWMM normally and connect:
-```
-/swmm-agent:attach
+Launch SWMM and connect:
+```bash
+swmm_cli process launch
+swmm_cli attach <pid>
 ```
 
 Claude will auto-use SWMM skills when relevant to your task.
@@ -70,10 +66,9 @@ cli/                           .NET CLI client (swmm_cli.exe)
 plugin/
   dist/                        Pre-built Epaswmm5.exe + runswmm.exe + swmm5.dll
   bin/                         swmm_cli (on PATH when plugin active)
-  skills/                      Model-invoked Claude skills
-  commands/                    User slash commands (install, attach)
+  skills/swmm-cli/             Master skill + per-command reference docs
+.claude-plugin/                Claude Code marketplace definition
 agent/                         Agent SDK standalone app
-marketplace/                   Claude Code marketplace definition
 ```
 
 ## License

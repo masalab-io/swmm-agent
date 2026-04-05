@@ -30,6 +30,24 @@ cli/SwmmCli/publish/
 # Large archives
 swmm524_gui.zip
 
+# Local build secrets (never commit)
+build.env.bat
+*.pfx
+
+# Runtime session files
+**/.swmm/
+
+# Build logs
+build_out.txt
+build_err.txt
+
+# Dev scripts
+check_file.ps1
+fix_crlf.ps1
+
+# Temp / test artefacts
+temp/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -156,7 +156,8 @@ Engineers using Claude Code interactively. Skills auto-invoke `swmm_cli` via the
 `swmm_cli` is on PATH via the plugin's `bin/` directory.
 
 ```
-/swmm-agent:attach        ← one-time setup
+swmm_cli process launch   ← launch the bundled SWMM exe
+swmm_cli attach <pid>     ← connect to the running instance
 [Claude auto-uses skills mid-task]
 ```
 
@@ -175,8 +176,7 @@ python agent/swmm_agent.py "Run a sensitivity study on J1 invert elevation"
 
 1. Install **Delphi Community Edition** (free — [embarcadero.com](https://www.embarcadero.com/products/delphi/starter))
 2. Open `swmm524_gui/Epaswmm5/Epaswmm5.dproj`
-3. Build → `swmm524_gui/Epaswmm5/Build/Win32/Epaswmm5.exe`
-4. Replace your existing `Epaswmm5.exe` with the compiled one
+3. Run `build.bat` — copies all 3 binaries from `Build/Win32/` into `plugin/dist/`
 
 The pipe server starts automatically when SWMM launches. No additional setup.
 
