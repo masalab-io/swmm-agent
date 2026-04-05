@@ -7,5 +7,8 @@
   },
   "homepage": "https://github.com/chaitanyalakeshri/SwmmXClaudeCode",
   "repository": "https://github.com/chaitanyalakeshri/SwmmXClaudeCode",
-  "license": "MIT"
+  "license": "MIT",
+  "bin": {
+    "swmm_cli": "bin/swmm_cli.exe"
+  }
 }
