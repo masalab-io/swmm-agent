@@ -21,9 +21,16 @@ Exit code 0 = success, 1 = error.
 
 ## Invoking swmm_cli
 
-Requires Claude Code v2.1.92+. On that version and above, `swmm_cli` is
-available as a bare command. If you get "command not found", use the full path:
-`swmm_cli`. Do **not** glob or search for it.
+Requires **Claude Code v2.1.92+**. On that version and above, `swmm_cli` is
+automatically on PATH and works as a bare command.
+
+If you get "command not found", the user needs to update Claude Code:
+1. In `~/.claude/settings.json`, set `"autoUpdatesChannel": "latest"`
+2. Run `claude update` in the terminal
+3. Restart Claude Code
+
+Until updated, use the full path as a fallback:
+`"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe"`. Do **not** glob or search for it.
 
 ---
 
