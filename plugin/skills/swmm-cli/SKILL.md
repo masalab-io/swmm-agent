@@ -21,18 +21,9 @@ Exit code 0 = success, 1 = error.
 
 ## Invoking swmm_cli
 
-Claude Code v2.1.92+ automatically adds the plugin `bin/` directory to PATH,
-so `swmm_cli` works as a bare command. On older versions it is not on PATH.
-
-**Always invoke using the full path via `${CLAUDE_PLUGIN_ROOT}`:**
-
-```bash
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process list
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process launch
-```
-
-Do **not** glob or search for the exe — `${CLAUDE_PLUGIN_ROOT}` is always set
-correctly by Claude Code when the plugin is active.
+Requires Claude Code v2.1.92+. On that version and above, `swmm_cli` is
+available as a bare command. If you get "command not found", use the full path:
+`swmm_cli`. Do **not** glob or search for it.
 
 ---
 
@@ -43,17 +34,17 @@ process is running and attached:
 
 ```bash
 # 1. Check if SWMM is already running
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process list
+swmm_cli process list
 
 # 2a. If no process found — launch it, then wait for the pipe to become available
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process launch
+swmm_cli process launch
 # repeat process list until available=true (pipe is ready, ~2–5 seconds)
 
 # 2b. If process found but not attached yet — save the session
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" attach <pid>
+swmm_cli attach <pid>
 
 # 3. Verify a file is open before touching elements or results
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" file info
+swmm_cli file info
 ```
 
 Once `attach` has been run, all subsequent commands resolve the PID
@@ -92,8 +83,8 @@ multiple simultaneous SWMM instances.
 ### process — manage the SWMM process
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process launch
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" process list
+swmm_cli process launch
+swmm_cli process list
 ```
 
 | Command | What it does | Returns |
@@ -104,7 +95,7 @@ multiple simultaneous SWMM instances.
 ### attach — persist a session
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" attach <pid>
+swmm_cli attach <pid>
 ```
 
 | Command | What it does | Returns |
@@ -114,8 +105,8 @@ multiple simultaneous SWMM instances.
 ### file — open and inspect the model file
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" file info  [--pid N]
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" file open  --path <path>  [--pid N]
+swmm_cli file info  [--pid N]
+swmm_cli file open  --path <path>  [--pid N]
 ```
 
 | Command | What it does | Returns |
@@ -126,10 +117,10 @@ multiple simultaneous SWMM instances.
 ### element — read, write, and add model elements
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" element list  --type <type>                                   [--pid N]
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" element get   --type <type>  --id <id>                        [--pid N]
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" element set   --type <type>  --id <id>  --prop <p> --value <v> [--pid N]
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" element add   --type <type>  --id <id>  [--x N]  [--y N]     [--pid N]
+swmm_cli element list  --type <type>                                   [--pid N]
+swmm_cli element get   --type <type>  --id <id>                        [--pid N]
+swmm_cli element set   --type <type>  --id <id>  --prop <p> --value <v> [--pid N]
+swmm_cli element add   --type <type>  --id <id>  [--x N]  [--y N]     [--pid N]
 ```
 
 | Command | What it does | Returns |
@@ -145,8 +136,8 @@ Valid `--type` values: `junction`, `outfall`, `divider`, `storage`, `conduit`,
 ### simulate — run and monitor the simulation
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" simulate run     [--pid N]
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" simulate status  [--pid N]
+swmm_cli simulate run     [--pid N]
+swmm_cli simulate status  [--pid N]
 ```
 
 | Command | What it does | Returns |
@@ -157,8 +148,8 @@ Valid `--type` values: `junction`, `outfall`, `divider`, `storage`, `conduit`,
 ### results — retrieve output after a simulation
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" results get      --type <type>  --id <id>  --variable <var>  [--pid N]
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe" results summary  --type <type>  --id <id>                    [--pid N]
+swmm_cli results get      --type <type>  --id <id>  --variable <var>  [--pid N]
+swmm_cli results summary  --type <type>  --id <id>                    [--pid N]
 ```
 
 | Command | What it does | Returns |
