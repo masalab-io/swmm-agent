@@ -19,37 +19,6 @@ Exit code 0 = success, 1 = error.
 
 ---
 
-## Bootstrap — do this before the very first command
-
-`swmm_cli` is installed in the plugin's `bin/` directory, which may not be on
-`PATH`. If `swmm_cli` is not found, locate it with:
-
-```bash
-# Find swmm_cli.exe in the Claude plugin tree
-find "$HOME/.claude/plugins" -name "swmm_cli.exe" 2>/dev/null | head -1
-```
-
-Use the full path for all subsequent calls, or set an alias:
-
-```bash
-SWMM_CLI="$HOME/.claude/plugins/marketplaces/masalab/plugin/bin/swmm_cli.exe"
-```
-
-`process launch` requires `CLAUDE_PLUGIN_ROOT` to locate `Epaswmm5.exe`.
-Set it to the parent of `bin/` (the directory that contains both `bin/` and
-`dist/`). If `swmm_cli` was found at `.../plugin/bin/swmm_cli.exe`, then:
-
-```bash
-export CLAUDE_PLUGIN_ROOT="$HOME/.claude/plugins/marketplaces/masalab/plugin"
-```
-
-`CLAUDE_PLUGIN_ROOT` is only required for `process launch`. All other commands
-communicate with an already-running process and do not need it. Starting from
-swmm_cli version 0.2.0, `process launch` will also fall back to auto-detecting
-`Epaswmm5.exe` at `../dist/` relative to the `swmm_cli` binary itself, so
-setting `CLAUDE_PLUGIN_ROOT` explicitly may not be necessary.
-
----
 
 ## Session setup — do this at the start of every SWMM session
 
