@@ -64,6 +64,17 @@ Or install directly:
 /reload-plugins
 ```
 
+### Uninstall
+
+```
+/plugin uninstall swmm@chaitanyalakeshri-SwmmXClaudeCode
+```
+
+To also remove the marketplace:
+```
+/plugin marketplace remove chaitanyalakeshri/SwmmXClaudeCode
+```
+
 ### 4. Start a SWMM session
 
 ```bash

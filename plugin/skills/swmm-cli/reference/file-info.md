@@ -137,7 +137,7 @@ swmm_cli simulate run
 swmm_cli simulate status   # repeat until status != "running"
 
 # Step 7: retrieve results
-swmm_cli results summary --type node --id J1
+swmm_cli results summary --type junction --id J1
 ```
 
 ## Gotchas and caveats for agents

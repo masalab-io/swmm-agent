@@ -12,19 +12,27 @@ swmm_cli results summary --type <type> --id <id> [--pid <N>]
 
 | Flag | Type | Required | Description |
 |------|------|----------|-------------|
-| `--type` | string | Yes | Element category. Valid values: `node`, `link`, `subcatchment` |
+| `--type` | string | Yes | Element subtype. Valid values: `junction`, `outfall`, `divider`, `storage`, `conduit`, `pump`, `orifice`, `weir`, `outlet`, `subcatchment` |
 | `--id` | string | Yes | Element ID as it appears in the `.inp` file (e.g. `J5`, `C3`, `Sub1`) |
 | `--pid` | integer | No | PID of the target `Epaswmm5.exe` process. Omit if a session is active. |
 
-`--type` accepts exactly three values:
+`--type` requires the **element subtype** — not a category alias:
 
-| Value | Covers |
-|-------|--------|
-| `node` | Junctions, outfalls, dividers, storage units |
-| `link` | Conduits, pumps, orifices, weirs, outlets |
-| `subcatchment` | Subcatchments |
+| Value | Element kind |
+|-------|-------------|
+| `junction` | Junction node |
+| `outfall` | Outfall node |
+| `divider` | Divider node |
+| `storage` | Storage unit node |
+| `conduit` | Conduit link |
+| `pump` | Pump link |
+| `orifice` | Orifice link |
+| `weir` | Weir link |
+| `outlet` | Outlet link |
+| `subcatchment` | Subcatchment |
 
-Passing any other string (e.g. `junction`, `conduit`) causes the server to return an error response.
+Passing `node` or `link` (the generic category names) causes the server to
+return an error. Use the specific subtype.
 
 ## Response shape
 
@@ -33,33 +41,39 @@ Passing any other string (e.g. `junction`, `conduit`) causes the server to retur
 { "ok": false, "error": "No simulation results available" }
 ```
 
-### Success — node example (`--type node --id J5`)
+### Success — junction example (`--type junction --id J5`)
 
 ```json
 {
   "ok": true,
   "data": {
-    "depth":    { "max": 4.12, "min": 0.00, "avg": 1.37 },
-    "head":     { "max": 9.62, "min": 5.50, "avg": 6.87 },
-    "volume":   { "max": 0.00, "min": 0.00, "avg": 0.00 },
-    "latflow":  { "max": 2.81, "min": 0.00, "avg": 0.44 },
-    "inflow":   { "max": 5.63, "min": 0.00, "avg": 1.22 },
-    "overflow": { "max": 0.73, "min": 0.00, "avg": 0.03 }
+    "id": "J5",
+    "type": "junction",
+    "nperiods": 96,
+    "depth":         { "max": 4.12, "min": 0.00 },
+    "head":          { "max": 9.62, "min": 5.50 },
+    "volume":        { "max": 0.00, "min": 0.00 },
+    "lateral_inflow":{ "max": 2.81, "min": 0.00 },
+    "total_inflow":  { "max": 5.63, "min": 0.00 },
+    "flooding":      { "max": 0.73, "min": 0.00 }
   }
 }
 ```
 
-### Success — link example (`--type link --id C3`)
+### Success — conduit example (`--type conduit --id C3`)
 
 ```json
 {
   "ok": true,
   "data": {
-    "flow":     { "max": 4.91, "min": 0.00, "avg": 1.08 },
-    "depth":    { "max": 1.32, "min": 0.00, "avg": 0.41 },
-    "velocity": { "max": 3.74, "min": 0.00, "avg": 1.12 },
-    "volume":   { "max": 6.55, "min": 0.00, "avg": 2.04 },
-    "capacity": { "max": 0.87, "min": 0.00, "avg": 0.27 }
+    "id": "C3",
+    "type": "conduit",
+    "nperiods": 96,
+    "flow":     { "max": 4.91, "min": 0.00 },
+    "depth":    { "max": 1.32, "min": 0.00 },
+    "velocity": { "max": 3.74, "min": 0.00 },
+    "volume":   { "max": 6.55, "min": 0.00 },
+    "capacity": { "max": 0.87, "min": 0.00 }
   }
 }
 ```
@@ -70,11 +84,17 @@ Passing any other string (e.g. `junction`, `conduit`) causes the server to retur
 {
   "ok": true,
   "data": {
-    "runoff":   { "max": 1.94, "min": 0.00, "avg": 0.18 },
-    "rainfall": { "max": 0.52, "min": 0.00, "avg": 0.06 },
-    "evap":     { "max": 0.01, "min": 0.00, "avg": 0.00 },
-    "infil":    { "max": 0.27, "min": 0.00, "avg": 0.05 },
-    "washoff":  { "max": 0.00, "min": 0.00, "avg": 0.00 }
+    "id": "Sub1",
+    "type": "subcatchment",
+    "nperiods": 96,
+    "rainfall":     { "max": 0.52, "min": 0.00 },
+    "snow_depth":   { "max": 0.00, "min": 0.00 },
+    "evaporation":  { "max": 0.01, "min": 0.00 },
+    "infiltration": { "max": 0.27, "min": 0.00 },
+    "runoff":       { "max": 1.94, "min": 0.00 },
+    "gw_flow":      { "max": 0.00, "min": 0.00 },
+    "gw_elev":      { "max": 0.00, "min": 0.00 },
+    "soil_moisture":{ "max": 0.00, "min": 0.00 }
   }
 }
 ```
@@ -93,7 +113,6 @@ Passing any other string (e.g. `junction`, `conduit`) causes the server to retur
 | `data` | object | Present on success. Keys are output-variable names for the given `--type`. |
 | `data.<variable>.max` | number | Maximum value observed across all reporting timesteps, in project units |
 | `data.<variable>.min` | number | Minimum value observed across all reporting timesteps, in project units |
-| `data.<variable>.avg` | number | Mean value across all reporting timesteps, in project units |
 | `error` | string | Present on failure. Human-readable reason (no results, unknown element, invalid type, pipe error, etc.) |
 
 ## How to use it
@@ -102,25 +121,25 @@ After a simulation completes, retrieve the summary for junction `J5` to check wh
 
 ```bash
 # 1. Confirm simulation finished successfully
-swmm_cli simulate status
-# {"ok":true,"status":"success"}
+swmm_cli simulate run
+# {"ok":true,"data":{"status":"success",...}}
 
 # 2. Retrieve all-variable summary for junction J5
-swmm_cli results summary --type node --id J5
+swmm_cli results summary --type junction --id J5
 ```
 
-The `overflow.max` field in the response tells you the peak flooding rate. If it is greater than zero the junction overflowed at some point during the run.
+The `flooding.max` field in the response tells you the peak flooding rate. If it is greater than zero the junction overflowed at some point during the run.
 
 ```bash
-# Extract peak overflow using jq
-swmm_cli results summary --type node --id J5 | jq '.data.overflow.max'
+# Extract peak flooding using jq
+swmm_cli results summary --type junction --id J5 | jq '.data.flooding.max'
 # 0.73
 ```
 
 To check conduit C3 for capacity problems:
 
 ```bash
-swmm_cli results summary --type link --id C3 | jq '.data.capacity.max'
+swmm_cli results summary --type conduit --id C3 | jq '.data.capacity.max'
 # 0.87  (87 % full at peak — approaching surcharged)
 ```
 
@@ -151,8 +170,8 @@ Steps 1 and 4 are the paths used in normal agent workflows. Step 4 is activated 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
 swmm_cli simulate run --pid $PID
-swmm_cli results summary --type node --id J5  --pid $PID
-swmm_cli results summary --type link --id C3  --pid $PID
+swmm_cli results summary --type junction --id J5   --pid $PID
+swmm_cli results summary --type conduit  --id C3   --pid $PID
 ```
 
 ### Pattern 2 — session file (attach once, omit --pid everywhere)
@@ -160,37 +179,31 @@ swmm_cli results summary --type link --id C3  --pid $PID
 ```bash
 swmm_cli attach 18340
 swmm_cli simulate run
-swmm_cli results summary --type node --id J5   # --pid not needed
+swmm_cli results summary --type junction     --id J5    # --pid not needed
 swmm_cli results summary --type subcatchment --id Sub1
 ```
 
 ### Pattern 3 — sequential workflow
 
-Full simulate → poll → summary workflow:
+`simulate run` **blocks** until the run finishes and returns the final status
+directly — no polling loop required:
 
 ```bash
-# 1. Trigger simulation (returns immediately)
-swmm_cli simulate run
+# 1. Run simulation (blocks until complete)
+RESULT=$(swmm_cli simulate run --pid $PID)
+STATUS=$(echo $RESULT | jq -r '.data.status')
 
-# 2. Poll until the run leaves the "running" state
-while true; do
-  STATUS=$(swmm_cli simulate status | jq -r '.status')
-  echo "Status: $STATUS"
-  [ "$STATUS" = "running" ] || break
-  sleep 2
-done
-
-# 3. Abort if the run did not succeed
+# 2. Abort if the run did not succeed
 if [ "$STATUS" != "success" ] && [ "$STATUS" != "warning" ]; then
   echo "Simulation ended with status: $STATUS — results unavailable"
   exit 1
 fi
 
-# 4. Retrieve summaries for key elements
-swmm_cli results summary --type node --id J1
-swmm_cli results summary --type node --id J5
-swmm_cli results summary --type link --id C3
-swmm_cli results summary --type subcatchment --id Sub1
+# 3. Retrieve summaries for key elements
+swmm_cli results summary --type junction     --id J1   --pid $PID
+swmm_cli results summary --type junction     --id J5   --pid $PID
+swmm_cli results summary --type conduit      --id C3   --pid $PID
+swmm_cli results summary --type subcatchment --id Sub1 --pid $PID
 ```
 
 ## Gotchas and caveats for agents
@@ -199,7 +212,7 @@ swmm_cli results summary --type subcatchment --id Sub1
 - **State requirements**: the simulation must be completed before calling this command. Calling it when status is `none` (no run has occurred) or `running` (run in progress) returns `{"ok":false,"error":"No simulation results available"}`.
 - **Race conditions**: if `simulate run` was just issued and the polling loop has not yet confirmed `success` or `warning`, calling `results summary` immediately may return an error. Always poll `simulate status` until the status leaves `running` before calling results commands.
 - **`warning` status is still valid**: a status of `warning` means the simulation completed with non-fatal warnings. Results are available and `results summary` will succeed normally.
-- **Type values**: `--type` must be exactly `node`, `link`, or `subcatchment`. Passing an element subtype such as `junction` or `conduit` will cause the server to return an error. Use `node` for all junction/outfall/divider/storage elements; use `link` for all conduit/pump/orifice/weir/outlet elements.
+- **Type values**: `--type` must be an element **subtype** — `junction`, `outfall`, `divider`, `storage`, `conduit`, `pump`, `orifice`, `weir`, `outlet`, or `subcatchment`. Passing `node` or `link` (the generic category names) causes the server to return `{"ok":false,"error":"Unknown element type: \"node\""}`. Always use the specific subtype.
 - **Unknown element ID**: if `--id` does not match any element of the given type in the open project, the command returns `{"ok":false,"error":"Element not found"}`. Verify element IDs with `swmm_cli element list --type <type>` before calling results commands.
 - **Multiple SWMM instances**: if more than one `Epaswmm5.exe` is running and neither `--pid` nor a session file is present, PID resolution fails at step 5 with the error `"Multiple SWMM instances running — specify --pid or run: swmm_cli attach <pid>"`. Resolve by attaching to the correct instance or passing `--pid` explicitly.
 - **Pipe availability**: if `swmm_cli process list` shows `"available":false` for the target process, the named-pipe server inside `Epaswmm5.exe` is not yet ready. Any command including `results summary` will fail with a pipe connection error. Retry `process list` until `available` is `true` (typically within 2–5 seconds of launch) before issuing any command.

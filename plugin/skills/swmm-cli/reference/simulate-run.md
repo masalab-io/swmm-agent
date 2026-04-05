@@ -112,7 +112,7 @@ If resolution fails with "Multiple SWMM instances running", use `--pid` to targe
 PID=$(swmm_cli process list | jq '.processes[0].pid')
 swmm_cli file open --path "C:/Models/ExampleModel.inp" --pid $PID
 swmm_cli simulate run --pid $PID
-swmm_cli results summary --type node --id J5 --pid $PID
+swmm_cli results summary --type junction --id J5 --pid $PID
 ```
 
 ### Pattern 2 — session file (attach once, omit --pid everywhere)
@@ -121,7 +121,7 @@ swmm_cli results summary --type node --id J5 --pid $PID
 swmm_cli attach 7412
 swmm_cli file open --path "C:/Models/ExampleModel.inp"
 swmm_cli simulate run          # --pid not needed
-swmm_cli results summary --type node --id J5
+swmm_cli results summary --type junction --id J5
 ```
 
 ### Pattern 3 — sequential workflow: modify → run → verify → fetch results
@@ -151,12 +151,12 @@ fi
 echo $RUN | jq '.data.continuity_errors'
 
 # 6. Retrieve peak depth time-series for J5
-swmm_cli results get --type node --id J5 --variable depth
+swmm_cli results get --type junction --id J5 --variable depth
 ```
 
 ## Gotchas and caveats for agents
 
-- **Blocking call**: unlike what the SKILL.md summary says ("returns immediately"), `simulate run` **blocks** on the named pipe until the SWMM DLL finishes the entire simulation. Do not poll `simulate status` in a loop after calling `simulate run` — the pipe response is not returned until the run is complete. `simulate status` is only useful for checking the outcome of a previous run or querying state between sessions.
+- **Blocking call**: `simulate run` **blocks** on the named pipe until the SWMM DLL finishes the entire simulation and returns the final status directly in the response. Do not poll `simulate status` in a loop after calling `simulate run` — the pipe response is not returned until the run is complete. `simulate status` is only useful for checking the outcome of a previous run or querying state between sessions.
 
 - **Exit code**: the CLI process exits 0 if the pipe round-trip itself succeeded (even if `ok: false` in the JSON). Check `ok` in the JSON to know whether the simulation succeeded — do not rely on the exit code alone to determine simulation outcome.
 

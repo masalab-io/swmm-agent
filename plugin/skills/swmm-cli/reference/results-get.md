@@ -12,25 +12,25 @@ swmm_cli results get --type <type> --id <id> --variable <variable> [--pid <N>]
 
 | Flag | Type | Required | Description |
 |------|------|----------|-------------|
-| `--type` | string | Yes | Element category. Valid values: `node`, `link`, `subcatchment` |
+| `--type` | string | Yes | Element subtype. Valid values: `junction`, `outfall`, `divider`, `storage`, `conduit`, `pump`, `orifice`, `weir`, `outlet`, `subcatchment` |
 | `--id` | string | Yes | Element ID as it appears in the `.inp` file (e.g. `J1`, `C3`, `S2`) |
 | `--variable` | string | Yes | Output variable name. See variable tables below. |
 | `--pid` | integer | No | PID of the target `Epaswmm5.exe` process. Omit if a session is active. |
 
 ### Valid `--variable` values by type
 
-**node** (`junction`, `outfall`, `divider`, `storage`)
+**node types** (`junction`, `outfall`, `divider`, `storage`)
 
 | Variable | Description |
 |----------|-------------|
 | `depth` | Water depth above invert (ft or m) |
 | `head` | Hydraulic head (ft or m) |
 | `volume` | Stored volume (ft³ or m³) |
-| `latflow` | Lateral inflow (cfs or cms) |
-| `inflow` | Total inflow (cfs or cms) |
-| `overflow` | Flooding/overflow rate (cfs or cms) |
+| `lateral_inflow` | Lateral inflow (cfs or cms) |
+| `total_inflow` | Total inflow (cfs or cms) |
+| `flooding` | Flooding/overflow rate (cfs or cms) |
 
-**link** (`conduit`, `pump`, `orifice`, `weir`, `outlet`)
+**link types** (`conduit`, `pump`, `orifice`, `weir`, `outlet`)
 
 | Variable | Description |
 |----------|-------------|
@@ -44,11 +44,14 @@ swmm_cli results get --type <type> --id <id> --variable <variable> [--pid <N>]
 
 | Variable | Description |
 |----------|-------------|
-| `runoff` | Runoff rate (cfs or cms) |
 | `rainfall` | Rainfall rate (in/hr or mm/hr) |
-| `evap` | Evaporation loss (in/hr or mm/hr) |
-| `infil` | Infiltration loss (in/hr or mm/hr) |
-| `washoff` | Pollutant washoff (mass/sec) |
+| `snow_depth` | Snow depth (in or mm) |
+| `evaporation` | Evaporation loss (in/hr or mm/hr) |
+| `infiltration` | Infiltration loss (in/hr or mm/hr) |
+| `runoff` | Runoff rate (cfs or cms) |
+| `gw_flow` | Groundwater flow rate (cfs or cms) |
+| `gw_elev` | Groundwater table elevation (ft or m) |
+| `soil_moisture` | Unsaturated zone moisture content |
 
 ## Response shape
 
@@ -78,12 +81,12 @@ Failure payload fields:
 After a simulation completes successfully, retrieve the depth time-series for junction `J5`:
 
 ```bash
-# 1. Confirm simulation finished successfully
-swmm_cli simulate status
-# {"ok":true,"status":"success"}
+# 1. Run simulation (blocks until complete — no polling needed)
+swmm_cli simulate run --pid $PID
+# {"ok":true,"data":{"status":"success",...}}
 
 # 2. Retrieve depth at junction J5 across all timesteps
-swmm_cli results get --type node --id J5 --variable depth
+swmm_cli results get --type junction --id J5 --variable depth
 ```
 
 Example response:
@@ -104,7 +107,7 @@ Example response:
 To get the flow time-series for conduit `C3`:
 
 ```bash
-swmm_cli results get --type link --id C3 --variable flow
+swmm_cli results get --type conduit --id C3 --variable flow
 ```
 
 To get runoff for subcatchment `S2`:
@@ -133,8 +136,8 @@ Steps 1–4 are the relevant paths in practice. Step 5 is convenient in single-i
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
 swmm_cli simulate run --pid $PID
-swmm_cli results get --type node --id J5 --variable depth --pid $PID
-swmm_cli results get --type link --id C3 --variable flow  --pid $PID
+swmm_cli results get --type junction --id J5 --variable depth --pid $PID
+swmm_cli results get --type conduit  --id C3 --variable flow  --pid $PID
 ```
 
 ### Pattern 2 — session file (attach once, omit --pid everywhere)
@@ -142,37 +145,31 @@ swmm_cli results get --type link --id C3 --variable flow  --pid $PID
 ```bash
 swmm_cli attach 18432
 swmm_cli simulate run
-swmm_cli results get --type node --id J5 --variable depth   # --pid not needed
+swmm_cli results get --type junction     --id J5 --variable depth   # --pid not needed
 swmm_cli results get --type subcatchment --id S2 --variable runoff
 ```
 
-### Pattern 3 — sequential workflow (run → poll → get results)
+### Pattern 3 — sequential workflow
 
-This command is the final step in the simulate-and-analyse workflow. Always confirm the simulation completed before calling it.
+`simulate run` **blocks** until the run finishes and returns the final status —
+no polling loop required.
 
 ```bash
-# 1. Start the run
-swmm_cli simulate run
+# 1. Run simulation (blocks until complete)
+RESULT=$(swmm_cli simulate run --pid $PID)
+STATUS=$(echo $RESULT | jq -r '.data.status')
 
-# 2. Poll until simulation finishes (status leaves "running")
-while true; do
-  STATUS=$(swmm_cli simulate status | jq -r '.status')
-  echo "Status: $STATUS"
-  [ "$STATUS" = "running" ] || break
-  sleep 2
-done
-
-# 3. Abort if run did not succeed
+# 2. Abort if run did not succeed
 if [ "$STATUS" != "success" ] && [ "$STATUS" != "warning" ]; then
   echo "Simulation ended with status: $STATUS — results unavailable"
   exit 1
 fi
 
-# 4. Retrieve results for multiple elements
-swmm_cli results get --type node --id J1  --variable depth
-swmm_cli results get --type node --id J5  --variable overflow
-swmm_cli results get --type link --id C3  --variable flow
-swmm_cli results get --type subcatchment --id S2 --variable runoff
+# 3. Retrieve results for multiple elements
+swmm_cli results get --type junction     --id J1 --variable depth    --pid $PID
+swmm_cli results get --type junction     --id J5 --variable flooding  --pid $PID
+swmm_cli results get --type conduit      --id C3 --variable flow      --pid $PID
+swmm_cli results get --type subcatchment --id S2 --variable runoff    --pid $PID
 ```
 
 ## Gotchas and caveats for agents
@@ -180,8 +177,9 @@ swmm_cli results get --type subcatchment --id S2 --variable runoff
 - **Exit codes**: exits 0 on success, 1 on any failure. Always check `ok` in the JSON before consuming `data`.
 - **Simulation must be complete**: calling `results get` before a simulation has run (status `none`) or while it is still running (status `running`) will return `{"ok":false,"error":"No simulation results available"}`. Always poll `simulate status` to confirm `success` or `warning` before calling this command.
 - **`warning` status is still valid**: a status of `warning` means the simulation completed with non-fatal warnings. Results are still available and should be retrieved normally.
-- **`--type` is the category, not the element subtype**: use `node` for junctions, outfalls, dividers, and storage units; use `link` for conduits, pumps, orifices, weirs, and outlets. Passing `junction` or `conduit` will return an error.
-- **Invalid `--variable`**: if the variable name does not exist for the given type (e.g. `--type node --variable flow`), the server returns `{"ok":false,"error":"..."}`. Consult the variable tables above.
+- **`--type` is the element subtype, not a category**: use `junction`, `outfall`, `divider`, or `storage` for node elements; use `conduit`, `pump`, `orifice`, `weir`, or `outlet` for link elements. Passing `node` or `link` (the generic category names) will return `{"ok":false,"error":"Unknown element type: \"node\""}`.
+- **Variable names are exact strings**: use `lateral_inflow` not `latflow`; `total_inflow` not `inflow`; `flooding` not `overflow`; `evaporation` not `evap`; `infiltration` not `infil`. Shortened aliases are not accepted. Invalid variable names return an error listing the valid options.
+- **Invalid `--variable`**: if the variable name does not exist for the given type (e.g. `--type junction --variable flow`), the server returns `{"ok":false,"error":"..."}`. Consult the variable tables above.
 - **Unknown element ID**: if `--id` does not exist in the project, the command returns `{"ok":false,"error":"Element not found"}`. Verify element IDs with `swmm_cli element list --type <type>` first.
 - **Empty `data` array**: a successful response with `"data":[]` means the simulation produced zero reporting timesteps for this element. Check the simulation's reporting interval in the `.inp` file.
 - **Multiple SWMM instances**: if more than one `Epaswmm5.exe` is running and no session or `--pid` is provided, PID resolution fails at step 5. The agent must specify `--pid` or run `swmm_cli attach` first.

@@ -39,22 +39,13 @@ The `status` field is always present when `ok` is `true`. The command exits with
 Call `simulate status` after `simulate run` to poll until the engine finishes, then branch on the returned status string.
 
 ```bash
-# Trigger the run (returns immediately)
-swmm_cli simulate run
-
-# Poll until status is no longer "running"
-while true; do
-  STATUS=$(swmm_cli simulate status | jq -r '.status')
-  echo "Status: $STATUS"
-  if [ "$STATUS" != "running" ]; then
-    break
-  fi
-  sleep 1
-done
+# Run the simulation — blocks until complete, returns final status directly
+RESULT=$(swmm_cli simulate run)
+STATUS=$(echo $RESULT | jq -r '.data.status')
 
 # Act on the result
 if [ "$STATUS" = "success" ] || [ "$STATUS" = "warning" ]; then
-  swmm_cli results summary --type node --id J5
+  swmm_cli results summary --type junction --id J5
 else
   echo "Simulation did not complete successfully: $STATUS"
 fi
@@ -91,28 +82,23 @@ swmm_cli simulate run            # --pid not needed
 swmm_cli simulate status         # --pid not needed
 ```
 
-### Pattern 3 — sequential workflow: run → poll status → get results
+### Pattern 3 — sequential workflow: run → get results
 
-The canonical end-to-end pattern for running a simulation and retrieving output:
+`simulate run` blocks until complete and returns the status directly — no
+polling loop is required.
 
 ```bash
 # 1. (Optional) Edit a property first
 swmm_cli element set --type junction --id J1 --prop invert_elev --value 8.5
 
-# 2. Trigger the simulation
-swmm_cli simulate run
+# 2. Run simulation (blocks — returns final status)
+RESULT=$(swmm_cli simulate run --pid $PID)
+STATUS=$(echo $RESULT | jq -r '.data.status')
 
-# 3. Poll until done
-while true; do
-  STATUS=$(swmm_cli simulate status | jq -r '.status')
-  [ "$STATUS" != "running" ] && break
-  sleep 1
-done
-
-# 4. Retrieve results if run was successful
+# 3. Retrieve results if run was successful
 if [ "$STATUS" = "success" ] || [ "$STATUS" = "warning" ]; then
-  swmm_cli results summary --type node --id J1
-  swmm_cli results get     --type node --id J1 --variable depth
+  swmm_cli results summary --type junction --id J1 --pid $PID
+  swmm_cli results get     --type junction --id J1 --variable depth --pid $PID
 fi
 ```
 
@@ -120,7 +106,7 @@ fi
 
 - **Exit codes**: exits 0 when the JSON response is delivered (even when `status` is `error` or `failed`). Exits 1 only when the command itself fails — for example, when PID resolution throws, when the named pipe is not available, or when the response JSON cannot be parsed. Always check `ok` in the response body, not just the exit code.
 
-- **Race conditions / timing**: `simulate run` returns immediately after triggering the engine; the engine runs asynchronously in the SWMM GUI thread. Call `simulate status` in a polling loop with a short sleep (1 second is sufficient for most models). Do not assume the simulation is finished just because `simulate run` returned `{"ok":true}`.
+- **`simulate run` blocks**: `simulate run` blocks on the named pipe until the SWMM engine finishes and returns the final status directly in its response. You do not need to poll `simulate status` after a `simulate run` call — the result is already in the `simulate run` response. Use `simulate status` only to query the outcome of a run from a previous session or to check current state without triggering a new run.
 
 - **`none` status**: if `simulate status` returns `none`, no simulation has been triggered in the current session. Ensure `simulate run` was called and returned `{"ok":true}` before polling.
 

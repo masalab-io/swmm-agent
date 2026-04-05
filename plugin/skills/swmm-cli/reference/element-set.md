@@ -208,7 +208,7 @@ until swmm_cli simulate status | jq -e '.status == "success" or .status == "erro
 done
 
 # Retrieve results
-swmm_cli results summary --type node --id J5
+swmm_cli results summary --type junction --id J5
 ```
 
 ## Gotchas and caveats for agents

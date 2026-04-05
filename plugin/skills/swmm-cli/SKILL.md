@@ -19,6 +19,38 @@ Exit code 0 = success, 1 = error.
 
 ---
 
+## Bootstrap — do this before the very first command
+
+`swmm_cli` is installed in the plugin's `bin/` directory, which may not be on
+`PATH`. If `swmm_cli` is not found, locate it with:
+
+```bash
+# Find swmm_cli.exe in the Claude plugin tree
+find "$HOME/.claude/plugins" -name "swmm_cli.exe" 2>/dev/null | head -1
+```
+
+Use the full path for all subsequent calls, or set an alias:
+
+```bash
+SWMM_CLI="$HOME/.claude/plugins/marketplaces/masalab/plugin/bin/swmm_cli.exe"
+```
+
+`process launch` requires `CLAUDE_PLUGIN_ROOT` to locate `Epaswmm5.exe`.
+Set it to the parent of `bin/` (the directory that contains both `bin/` and
+`dist/`). If `swmm_cli` was found at `.../plugin/bin/swmm_cli.exe`, then:
+
+```bash
+export CLAUDE_PLUGIN_ROOT="$HOME/.claude/plugins/marketplaces/masalab/plugin"
+```
+
+`CLAUDE_PLUGIN_ROOT` is only required for `process launch`. All other commands
+communicate with an already-running process and do not need it. Starting from
+swmm_cli version 0.2.0, `process launch` will also fall back to auto-detecting
+`Epaswmm5.exe` at `../dist/` relative to the `swmm_cli` binary itself, so
+setting `CLAUDE_PLUGIN_ROOT` explicitly may not be necessary.
+
+---
+
 ## Session setup — do this at the start of every SWMM session
 
 Before using any element, simulate, file, or results command, ensure a SWMM
@@ -41,6 +73,12 @@ swmm_cli file info
 
 Once `attach` has been run, all subsequent commands resolve the PID
 automatically from `.swmm/session.json` — no `--pid` flag needed.
+
+**Reliability note**: the session file is written to `.swmm/session.json`
+relative to the working directory at the time `attach` runs. Because the shell
+CWD can vary between Bash tool calls, the session file is often not found in
+subsequent calls. The most reliable approach is to pass `--pid` explicitly on
+every command rather than relying on the session file.
 
 ---
 
@@ -128,8 +166,8 @@ swmm_cli simulate status  [--pid N]
 
 | Command | What it does | Returns |
 |---------|-------------|---------|
-| `simulate run` | Trigger a simulation run (returns immediately) | `{ok}` |
-| `simulate status` | Poll current run status | `{ok, status}` — status values: `none` `running` `success` `warning` `error` `failed` |
+| `simulate run` | Run simulation — **blocks** until the engine finishes, returns final status | `{ok, data:{status, message, continuity_errors}}` |
+| `simulate status` | Query the status of the most recent run | `{ok, status}` — status values: `none` `running` `success` `warning` `error` `failed` |
 
 ### results — retrieve output after a simulation
 
@@ -143,7 +181,11 @@ swmm_cli results summary  --type <type>  --id <id>                    [--pid N]
 | `results get` | Full time-series for one element/variable | `{ok, data:[{time, value},...]}` |
 | `results summary` | Max/min/avg across all variables for one element | `{ok, data:{...}}` |
 
-Valid `--type` for results: `node`, `link`, `subcatchment`
+Valid `--type` for results: `junction`, `outfall`, `divider`, `storage`,
+`conduit`, `pump`, `orifice`, `weir`, `outlet`, `subcatchment`
+
+**Important**: results commands require the element subtype, not a category
+name. `node` and `link` are **not** valid — passing them returns an error.
 
 ---
 

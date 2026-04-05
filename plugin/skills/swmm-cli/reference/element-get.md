@@ -230,7 +230,7 @@ swmm_cli element get --type junction --id J5 | jq '.invert_elev'
 # 4. Run simulation and check results
 swmm_cli simulate run
 swmm_cli simulate status   # poll until status != "running"
-swmm_cli results summary --type node --id J5
+swmm_cli results summary --type junction --id J5
 ```
 
 ## Gotchas and caveats for agents

@@ -1,10 +1,10 @@
 {
-  "name": "masalab",
+  "name": "chaitanyalakeshri",
   "owner": {
-    "name": "MasaLab"
+    "name": "chaitanyalakeshri"
   },
   "metadata": {
-    "description": "MasaLab plugin marketplace — SWMM agent and engineering tools"
+    "description": "chaitanyalakeshri plugin marketplace"
   },
   "plugins": [
     {

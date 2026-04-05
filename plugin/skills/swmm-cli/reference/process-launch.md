@@ -20,7 +20,7 @@ This command takes no flags. There is no `--pid` option because the process does
 
 ```json
 { "ok": true, "pid": 18432 }
-{ "ok": false, "error": "Epaswmm5.exe not found. CLAUDE_PLUGIN_ROOT is not set or dist/Epaswmm5.exe is missing." }
+{ "ok": false, "error": "Epaswmm5.exe not found. Set CLAUDE_PLUGIN_ROOT to the plugin root directory, or ensure Epaswmm5.exe exists at dist/ alongside the swmm_cli binary." }
 ```
 
 **Success fields:**
@@ -35,7 +35,7 @@ This command takes no flags. There is no `--pid` option because the process does
 | Field | Type | Description |
 |-------|------|-------------|
 | `ok` | bool | Always `false` on failure |
-| `error` | string | Human-readable reason — typically `CLAUDE_PLUGIN_ROOT` not set, or `dist/Epaswmm5.exe` missing |
+| `error` | string | Human-readable reason — `CLAUDE_PLUGIN_ROOT` not set and fallback path `../dist/Epaswmm5.exe` also not found |
 
 ## How to use it
 
@@ -102,13 +102,10 @@ done
 # Attach session so --pid is not needed again
 swmm_cli attach $PID
 
-# Open a model file and run
+# Open a model file and run (simulate run blocks until complete)
 swmm_cli file open --path "C:/Models/catchment.inp"
-swmm_cli simulate run
-
-# Poll simulation status
-until [ "$(swmm_cli simulate status | jq -r '.status')" != "running" ]; do sleep 2; done
-swmm_cli results summary --type node --id J5
+swmm_cli simulate run   # blocks — returns {"ok":true,"data":{"status":"success",...}}
+swmm_cli results summary --type junction --id J5
 ```
 
 ## Gotchas and caveats for agents
@@ -117,7 +114,7 @@ swmm_cli results summary --type node --id J5
 
 - **Race condition — pipe not immediately available**: the command sleeps 500 ms internally before returning, but the named-pipe server inside `Epaswmm5.exe` typically takes 2–5 seconds to initialise. Always poll `swmm_cli process list` and wait for `"available": true` before sending any element, file, simulate, or results commands.
 
-- **`CLAUDE_PLUGIN_ROOT` must be set**: the command resolves the bundled exe exclusively via this environment variable. If the variable is absent, the command always fails regardless of whether `Epaswmm5.exe` exists elsewhere on disk.
+- **`CLAUDE_PLUGIN_ROOT` preferred but not required**: the command first checks the `CLAUDE_PLUGIN_ROOT` env var, then falls back to looking for `../dist/Epaswmm5.exe` relative to the `swmm_cli` binary itself. If `swmm_cli.exe` lives at `.../plugin/bin/swmm_cli.exe`, the fallback finds `.../plugin/dist/Epaswmm5.exe` automatically. Setting `CLAUDE_PLUGIN_ROOT` is still recommended for clarity. Set it to the directory that contains both `bin/` and `dist/` (e.g. `export CLAUDE_PLUGIN_ROOT=.../plugin`).
 
 - **Standard EPA download will not work**: even if the agent somehow points to a different copy of `Epaswmm5.exe`, the standard EPA binary has no named-pipe server and will not respond to any subsequent `swmm_cli` commands. Always use the binary from `plugin/dist/`.
 

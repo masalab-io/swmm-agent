@@ -127,7 +127,7 @@ swmm_cli simulate run
 swmm_cli simulate status
 
 # Inspect results at the new node
-swmm_cli results summary --type node --id J10
+swmm_cli results summary --type junction --id J10
 ```
 
 ## Gotchas and caveats for agents

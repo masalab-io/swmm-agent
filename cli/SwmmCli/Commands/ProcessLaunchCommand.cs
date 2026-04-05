@@ -31,13 +31,23 @@ static class ProcessLaunchCommand
 
     private static string ResolveBundledExe()
     {
+        // 1. Explicit env var takes priority
         string? pluginRoot = Environment.GetEnvironmentVariable("CLAUDE_PLUGIN_ROOT");
         if (!string.IsNullOrEmpty(pluginRoot))
         {
             string candidate = Path.Combine(pluginRoot, "dist", "Epaswmm5.exe");
             if (File.Exists(candidate)) return candidate;
         }
+
+        // 2. Fallback: look for ../dist/Epaswmm5.exe relative to swmm_cli.exe
+        //    swmm_cli lives in plugin/bin/, Epaswmm5.exe lives in plugin/dist/
+        string selfDir = AppContext.BaseDirectory;
+        string relative = Path.Combine(selfDir, "..", "dist", "Epaswmm5.exe");
+        string full = Path.GetFullPath(relative);
+        if (File.Exists(full)) return full;
+
         throw new FileNotFoundException(
-            "Epaswmm5.exe not found. CLAUDE_PLUGIN_ROOT is not set or dist/Epaswmm5.exe is missing.");
+            "Epaswmm5.exe not found. Set CLAUDE_PLUGIN_ROOT to the plugin root directory, " +
+            "or ensure Epaswmm5.exe exists at dist/ alongside the swmm_cli binary.");
     }
 }
