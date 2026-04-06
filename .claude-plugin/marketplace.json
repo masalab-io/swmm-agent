@@ -1,10 +1,10 @@
 {
-  "name": "chaitanyalakeshri",
+  "name": "masalab-io",
   "owner": {
-    "name": "chaitanyalakeshri"
+    "name": "masalab-io"
   },
   "metadata": {
-    "description": "chaitanyalakeshri plugin marketplace"
+    "description": "masalab-io plugin marketplace"
   },
   "plugins": [
     {

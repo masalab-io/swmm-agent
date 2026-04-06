@@ -3,10 +3,10 @@
   "description": "Control EPA SWMM 5.2.4 GUI from Claude Code — read/write model elements, run simulations, retrieve results",
   "version": "0.1.0",
   "author": {
-    "name": "chaitanyalakeshri"
+    "name": "masalab-io"
   },
-  "homepage": "https://github.com/chaitanyalakeshri/SwmmXClaudeCode",
-  "repository": "https://github.com/chaitanyalakeshri/SwmmXClaudeCode",
+  "homepage": "https://github.com/masalab-io/swmm-agent",
+  "repository": "https://github.com/masalab-io/swmm-agent",
   "license": "MIT",
   "bin": {
     "swmm_cli": "bin/swmm_cli.exe"

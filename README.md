@@ -9,7 +9,7 @@ Control EPA SWMM 5.2.4 from AI agents (Claude Code, Agent SDK, or any bash-capab
 ### 1. Add the marketplace (once)
 
 ```
-/plugin marketplace add chaitanyalakeshri/SwmmXClaudeCode
+/plugin marketplace add masalab-io/swmm-agent
 ```
 
 ### 2. Install the plugin
@@ -21,7 +21,7 @@ Run `/plugin`, go to **Discover**, find **swmm**, and choose your scope:
 
 Or install directly:
 ```
-/plugin install swmm@chaitanyalakeshri-SwmmXClaudeCode
+/plugin install swmm@masalab-io-swmm-agent
 ```
 
 ### 3. Activate
@@ -33,12 +33,12 @@ Or install directly:
 ### Uninstall
 
 ```
-/plugin uninstall swmm@chaitanyalakeshri-SwmmXClaudeCode
+/plugin uninstall swmm@masalab-io-swmm-agent
 ```
 
 To also remove the marketplace:
 ```
-/plugin marketplace remove chaitanyalakeshri/SwmmXClaudeCode
+/plugin marketplace remove masalab-io/swmm-agent
 ```
 
 ### 4. Start a SWMM session
