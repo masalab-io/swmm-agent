@@ -20,90 +20,126 @@ Exit code 0 = success, 1 = error.
 
 ---
 
-## Invoking swmm_cli
+## Version requirement
 
-Requires **Claude Code v2.1.92+**. On that version and above, `swmm_cli` is
-automatically on PATH and works as a bare command.
+**Requires Claude Code v2.1.92 or later.** Earlier versions do not put
+plugin binaries on PATH, so `swmm_cli` will not be found as a bare command.
 
-If you get "command not found", the user needs to update Claude Code:
-1. In `~/.claude/settings.json`, set `"autoUpdatesChannel": "latest"`
-2. Run `claude update` in the terminal
-3. Restart Claude Code
+To check your version:
+```bash
+claude --version
+```
 
-Until updated, use the full path as a fallback:
-`"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe"`. Do **not** glob or search for it.
+If you need to update, set the updates channel to `latest` and run the update:
+```bash
+# In ~/.claude/settings.json, set:
+#   "autoUpdatesChannel": "latest"
+# Then:
+claude update
+```
+
+After updating, restart Claude Code and run `/reload-plugins`.
+
+If you cannot update immediately, use the full path as a fallback:
+```
+"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe"
+```
 
 ---
 
-## Session setup — two approaches
+## Rules — read these first
 
-### Approach A — Pipeline mode (recommended)
+1. **`swmm_cli` is on PATH.** Call it directly. Never `cd` to the plugin
+   directory or any other directory before calling it.
+2. **Always use pipeline mode.** Chain commands with `|`. Do not make
+   separate Bash calls for each step.
+3. **Never loop over `element get` to filter.** Use
+   `element list | element filter` — it runs server-side in one pipeline.
+4. **Use the specific element subtype** (`junction`, `conduit`, etc.) for
+   `--type`. Never pass `node` or `link` — those are not valid.
 
-Chain commands with bash `|`. The session line `{"kind":"session","pid":N}`
-flows automatically through every stage; no `--pid`, no session file needed.
+---
+
+## Command selection guide
+
+| User wants to... | Use this | NOT this |
+|---|---|---|
+| Open a model and run a simulation | `process launch \| file open \| simulate run` (one pipeline) | Separate Bash calls for each step |
+| See one element's properties | `element get --type T --id X` | — |
+| Find elements matching a condition | `element list --type T \| element filter --prop P --op O --value V` | Looping `element get` in bash and filtering with Python/jq |
+| Change a property | `element set --type T --id X --prop P --value V` | — |
+| Get max/min summary after sim | `results summary --type T --id X` | `results get` (that's for full time-series) |
+| Get full time-series after sim | `results get --type T --id X --variable V` | `results summary` (that's for scalars only) |
+| Add a new node to the model | `element add --type T --id X --x N --y N` | Only nodes (junction/outfall/divider/storage) supported |
+
+---
+
+## Common tasks — copy these patterns
+
+### Run a model and get results for one element
 
 ```bash
-# Full workflow in one pipeline: launch → open → simulate → results
 swmm_cli process launch | \
-  swmm_cli file open --path "/path/to/model.inp" | \
+  swmm_cli file open --path "C:/path/to/model.inp" | \
   swmm_cli simulate run | \
   swmm_cli results summary --type junction --id J5
 ```
 
-Each consumer stage **blocks** until the previous stage finishes (drain-to-EOF
-semantics), so the commands run sequentially even though bash starts all
-processes simultaneously.
-
-### Approach B — Attach + explicit --pid (classic)
+### Find all junctions matching a condition
 
 ```bash
-# 1. Check if SWMM is already running
-swmm_cli process list
-
-# 2a. If no process found — launch it, then wait for the pipe to become available
-swmm_cli process launch
-# repeat process list until available=true (pipe is ready, ~2–5 seconds)
-
-# 2b. If process found but not attached yet — save the session
-swmm_cli attach <pid>
-
-# 3. Verify a file is open before touching elements or results
-swmm_cli file info
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/path/to/model.inp" | \
+  swmm_cli element list --type junction | \
+  swmm_cli element filter --prop invert_elev --op gt --value 4960
 ```
 
-Once `attach` has been run, all subsequent commands resolve the PID
-automatically from `.swmm/session.json` — no `--pid` flag needed.
+The last line of output contains the filtered IDs. Extract with `tail -1 | jq '.data.ids'`.
 
-**Reliability note**: the session file is written to `.swmm/session.json`
-relative to the working directory at the time `attach` runs. Because the shell
-CWD can vary between Bash tool calls, the session file is often not found in
-subsequent calls. The most reliable approach is to use Pipeline mode above, or
-pass `--pid` explicitly on every command.
+### Chain multiple filters (AND logic)
 
----
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/path/to/model.inp" | \
+  swmm_cli element list --type conduit | \
+  swmm_cli element filter --prop length --op gt --value 200 | \
+  swmm_cli element filter --prop tag --op eq --value Main
+```
 
-## PID resolution — how swmm_cli finds the target process
+### Modify a property and re-run
 
-Every command that talks to SWMM needs a process PID. It resolves in this
-order (first match wins):
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/path/to/model.inp" | \
+  swmm_cli element set --type junction --id J5 --prop invert_elev --value 97.5
 
-| Priority | Source | How |
-|----------|--------|-----|
-| 1 | `--pid <N>` flag | Explicit on the command line |
-| 2 | Piped stdin | `{"kind":"session","pid":N}` line found in stdin (pipeline mode) |
-| 3 | Environment | `SWMM_PID` env var |
-| 4 | Session file | `.swmm/session.json` in CWD (written by `swmm_cli attach`) |
-| 5 | Auto-discovery | Exactly one `Epaswmm5.exe` running — use it |
-| 6 | Error | Throw — no instance found or multiple instances |
+# Then in the same session (auto-discovery finds the single instance):
+swmm_cli simulate run | \
+  swmm_cli results summary --type junction --id J5
+```
 
-**Pipeline mode (priority 2)**: when commands are connected with `|`, each
-consumer drains all stdin to EOF (re-emitting every line), extracts the session
-PID, then appends its own output. This gives sequential execution and automatic
-PID propagation with no flags required.
+### Get full depth time-series for a junction
 
-**Classic mode (priority 4)**: after the user runs `swmm_cli attach <pid>`,
-priority 4 resolves automatically. Omit `--pid` unless you are working with
-multiple simultaneous SWMM instances.
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/path/to/model.inp" | \
+  swmm_cli simulate run | \
+  swmm_cli results get --type junction --id J5 --variable depth
+```
+
+### Inspect then filter to get details of matched elements
+
+```bash
+# Step 1: find matching IDs
+IDS=$(swmm_cli element list --type junction | \
+  swmm_cli element filter --prop invert_elev --op gt --value 4960 | \
+  tail -1 | jq -r '.data.ids[]')
+
+# Step 2: get full properties of each match
+for ID in $IDS; do
+  swmm_cli element get --type junction --id "$ID"
+done
+```
 
 ---
 
@@ -111,172 +147,131 @@ multiple simultaneous SWMM instances.
 
 ### process — manage the SWMM process
 
-```
-swmm_cli process launch
-swmm_cli process list
-```
+| Command | What it does | Key output |
+|---------|-------------|------------|
+| `process launch` | Launch bundled Epaswmm5.exe | `{"kind":"session","pid":N}` — pipeable |
+| `process list` | List running instances | `{ok, processes:[{pid, pipe, available}]}` |
 
-| Command | What it does | Returns |
-|---------|-------------|---------|
-| `process launch` | Launch bundled `Epaswmm5.exe` from `plugin/dist/` | `{"kind":"session","pid":N}` — session line, pipeable |
-| `process list` | List all running Epaswmm5 processes | `{ok, processes:[{pid, pipe, available}]}` |
+### attach — persist a session (rarely needed with pipelines)
 
-### attach — persist a session
+| Command | What it does |
+|---------|-------------|
+| `attach <pid>` | Write PID to `.swmm/session.json` for --pid-less calls |
 
-```
-swmm_cli attach <pid>
-```
+### file — open and inspect the model
 
-| Command | What it does | Returns |
-|---------|-------------|---------|
-| `attach <pid>` | Write PID to `.swmm/session.json`; enables --pid-less calls | `{"kind":"session","pid":N}` — session line, pipeable |
+| Command | What it does |
+|---------|-------------|
+| `file open --path <path>` | Open a `.inp` model file |
+| `file info` | Show path of currently open file |
 
-### file — open and inspect the model file
+### element — read, write, add, and filter
 
-```
-swmm_cli file info  [--pid N]
-swmm_cli file open  --path <path>  [--pid N]
-```
+| Command | What it does |
+|---------|-------------|
+| `element list --type <type>` | List all IDs of a type |
+| `element get --type <type> --id <id>` | Get all properties of one element |
+| `element set --type <type> --id <id> --prop <p> --value <v>` | Set one property |
+| `element add --type <type> --id <id> [--x N] [--y N]` | Add a new node (junction/outfall/divider/storage only) |
+| `element filter --prop <p> --op <op> --value <v>` | Filter a piped element list by property. Must be piped from `element list` or another `element filter`. |
 
-| Command | What it does | Returns |
-|---------|-------------|---------|
-| `file info` | Metadata of currently open `.inp` file | `{ok, path, ...}` |
-| `file open` | Open a `.inp` model file in the running instance | `{ok}` |
+**Valid `--type` values:** `junction`, `outfall`, `divider`, `storage`,
+`conduit`, `pump`, `orifice`, `weir`, `outlet`, `subcatchment`
 
-### element — read, write, add, and filter model elements
+**`element filter` operators:** `eq`, `ne`, `lt`, `le`, `gt`, `ge`,
+`contains`, `not-contains`, `starts-with`, `ends-with`.
+Numeric operators parse both sides as double; string operators are case-insensitive.
 
-```
-swmm_cli element list   --type <type>                                    [--pid N]
-swmm_cli element get    --type <type>  --id <id>                         [--pid N]
-swmm_cli element set    --type <type>  --id <id>  --prop <p> --value <v> [--pid N]
-swmm_cli element add    --type <type>  --id <id>  [--x N]  [--y N]      [--pid N]
-swmm_cli element filter --prop <prop>  --op <op>  --value <v>            [--pid N]
-```
+### simulate — run and monitor
 
-| Command | What it does | Returns |
-|---------|-------------|---------|
-| `element list` | List all element IDs of a given type | `{ok, data:{type, ids:[...]}}` |
-| `element get` | Get all properties of one element | `{ok, data:{...}}` |
-| `element set` | Set one property on an element | `{ok}` |
-| `element add` | Add a new node element (junction/outfall/divider/storage) | `{ok}` |
-| `element filter` | Filter a piped element list by a property condition | `{ok, data:{type, ids:[...]}}` |
-
-`element filter` must be piped from `element list` or a prior `element filter`.
-Supported `--op` values: `eq`, `ne`, `lt`, `le`, `gt`, `ge`, `contains`,
-`not-contains`, `starts-with`, `ends-with`. Numeric operators (`lt`/`le`/`gt`/`ge`)
-parse both sides as double; string operators are case-insensitive.
-
-Valid `--type` values: `junction`, `outfall`, `divider`, `storage`, `conduit`,
-`pump`, `orifice`, `weir`, `outlet`, `subcatchment`
-
-### simulate — run and monitor the simulation
-
-```
-swmm_cli simulate run     [--pid N]
-swmm_cli simulate status  [--pid N]
-```
-
-| Command | What it does | Returns |
-|---------|-------------|---------|
-| `simulate run` | Run simulation — **blocks** until the engine finishes, returns final status | `{ok, data:{status, message, continuity_errors}}` |
-| `simulate status` | Query the status of the most recent run | `{ok, status}` — status values: `none` `running` `success` `warning` `error` `failed` |
+| Command | What it does |
+|---------|-------------|
+| `simulate run` | Run simulation — **blocks** until finished, returns status + continuity errors |
+| `simulate status` | Query status of most recent run (rarely needed — `simulate run` already returns it) |
 
 ### results — retrieve output after a simulation
 
-```
-swmm_cli results get      --type <type>  --id <id>  --variable <var>  [--pid N]
-swmm_cli results summary  --type <type>  --id <id>                    [--pid N]
-```
+| Command | What it does |
+|---------|-------------|
+| `results summary --type <type> --id <id>` | Max/min across all variables for one element |
+| `results get --type <type> --id <id> --variable <var>` | Full time-series for one variable |
 
-| Command | What it does | Returns |
-|---------|-------------|---------|
-| `results get` | Full time-series for one element/variable | `{ok, data:[{time, value},...]}` |
-| `results summary` | Max/min/avg across all variables for one element | `{ok, data:{...}}` |
+**Valid `--type` for results:** same as element types above.
 
-Valid `--type` for results: `junction`, `outfall`, `divider`, `storage`,
-`conduit`, `pump`, `orifice`, `weir`, `outlet`, `subcatchment`
+**Valid `--variable` values:**
 
-**Important**: results commands require the element subtype, not a category
-name. `node` and `link` are **not** valid — passing them returns an error.
+| Node types (junction, outfall, divider, storage) | Link types (conduit, pump, orifice, weir, outlet) | Subcatchment |
+|---|---|---|
+| `depth`, `head`, `volume`, `lateral_inflow`, `total_inflow`, `flooding` | `flow`, `depth`, `velocity`, `volume`, `capacity` | `rainfall`, `snow_depth`, `evaporation`, `infiltration`, `runoff`, `gw_flow`, `gw_elev`, `soil_moisture` |
 
 ---
 
-## Pipeline mode — chaining commands with bash pipes
+## Pipeline mode — how it works
 
-Commands can be connected with `|` to build full workflows where the session
-PID propagates automatically and each stage runs only after the previous one
-finishes.
+Commands chained with `|` form a pipeline. The session PID propagates
+automatically — no `--pid` flag needed.
 
-### How it works
-
-**Producers** (`process launch`, `attach`) emit one line:
-```json
-{"kind":"session","pid":12345}
-```
+**Producers** (`process launch`, `attach`) emit: `{"kind":"session","pid":N}`
 
 **Consumers** (all other commands) on startup:
-1. Drain all stdin to EOF, re-emitting every line verbatim.
-2. Extract the PID from the `{"kind":"session",...}` line.
-3. Use that PID for the pipe call, then append their own JSON result line.
+1. Drain all stdin to EOF, re-emitting every line.
+2. Extract the PID from the session line.
+3. Execute their operation, then append their own JSON result.
 
-Because step 1 blocks until stdin closes (upstream exits), each stage runs
-sequentially even though bash starts all processes simultaneously.
+Because step 1 blocks until stdin closes, each stage runs sequentially.
 
-### Full pipeline examples
+**Getting the final result:** every stage appends output. The terminal shows
+all lines. To extract only the last command's output: `| tail -1`.
 
-```bash
-# Launch → open → run → summarise results
-swmm_cli process launch | \
-  swmm_cli file open --path "/path/to/model.inp" | \
-  swmm_cli simulate run | \
-  swmm_cli results summary --type junction --id J5
-```
+---
 
-```bash
-# Launch → open → list → filter by elevation → filter by tag
-swmm_cli process launch | \
-  swmm_cli file open --path "/path/to/model.inp" | \
-  swmm_cli element list --type junction | \
-  swmm_cli element filter --prop invert_elev --op gt --value 4970 | \
-  swmm_cli element filter --prop tag --op eq --value Main
-```
+## PID resolution
 
-### Output stream
+Every command that talks to SWMM resolves the PID in this order (first match wins):
 
-Every stage appends its output to the stream. The terminal shows all lines from
-all stages (session line + each command's result). To see only the final
-result, pipe through `tail -1` or filter with `jq` on the last line.
+| Priority | Source |
+|----------|--------|
+| 1 | `--pid <N>` flag |
+| 2 | `{"kind":"session","pid":N}` in piped stdin (pipeline mode) |
+| 3 | `SWMM_PID` env var |
+| 4 | `.swmm/session.json` in CWD (written by `attach`) |
+| 5 | Auto-discovery: exactly one `Epaswmm5.exe` running |
+| 6 | Error |
 
-### element filter operator reference
+**In practice:** pipeline mode (priority 2) handles everything. If you must
+use separate Bash calls, auto-discovery (priority 5) works when only one
+SWMM instance is running.
 
-| Operator | Type | Matches when |
-|----------|------|-------------|
-| `eq` | string | value equals (case-insensitive) |
-| `ne` | string | value does not equal |
-| `contains` | string | value contains substring |
-| `not-contains` | string | value does not contain substring |
-| `starts-with` | string | value starts with prefix |
-| `ends-with` | string | value ends with suffix |
-| `lt` | numeric | value < threshold |
-| `le` | numeric | value ≤ threshold |
-| `gt` | numeric | value > threshold |
-| `ge` | numeric | value ≥ threshold |
+---
+
+## Shared gotchas
+
+- **Pipe startup delay:** after `process launch`, the named pipe takes 2-5s
+  to initialise. In pipeline mode this is handled automatically (the next
+  stage blocks). In separate calls, poll `process list` until
+  `available: true`.
+- **`simulate run` blocks:** it returns the final status directly. Do not
+  poll `simulate status` after it — the result is already in the response.
+- **All numeric properties are strings:** `element get` returns values like
+  `"10.5"` not `10.5`. Use `jq`'s `tonumber` if you need arithmetic.
+- **Changes are in-memory only:** `element set` modifies the running model.
+  Changes are lost if SWMM closes without saving.
+- **Re-run after changes:** after `element set`, previous results are stale.
+  Call `simulate run` again.
 
 ---
 
 ## Loading detailed documentation
 
-Each command has a reference file with full parameter tables, chaining
-examples, and agent gotchas. Read it before using that command:
+Each command has a reference file with parameter details and
+command-specific notes. Read one before using an unfamiliar command:
 
 ```
 ${CLAUDE_PLUGIN_ROOT}/skills/swmm-agent/reference/<command>.md
 ```
 
-Reference file names:
-
-| Command | Reference file |
-|---------|---------------|
+| Command | File |
+|---------|------|
 | `process launch` | `process-launch.md` |
 | `process list` | `process-list.md` |
 | `attach` | `attach.md` |
@@ -291,5 +286,3 @@ Reference file names:
 | `simulate status` | `simulate-status.md` |
 | `results get` | `results-get.md` |
 | `results summary` | `results-summary.md` |
-
-If a reference file does not exist yet, proceed using the summary above.

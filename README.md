@@ -4,7 +4,11 @@ Control EPA SWMM 5.2.4 from AI agents (Claude Code, Agent SDK, or any bash-capab
 
 ## Use with Claude Code
 
-> **Requires:** Claude Code, Windows 10/11. No SWMM installation needed — the plugin ships the exe.
+> **Requires:** Claude Code **v2.1.92+**, Windows 10/11. No SWMM installation needed — the plugin ships the exe.
+>
+> If `swmm_cli` is not found after installing, your Claude Code version is too old.
+> Update by setting `"autoUpdatesChannel": "latest"` in `~/.claude/settings.json`,
+> then run `claude update` and restart.
 
 ### 1. Add the marketplace (once)
 
