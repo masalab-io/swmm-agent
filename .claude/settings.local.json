@@ -13,7 +13,8 @@
       "Bash(cmd.exe /c \"attrib C:\\\\Chaitanya\\\\MasaLab\\\\009SWMMAgent\\\\swmm524_gui\\\\Epaswmm5\\\\Epaswmm5.vrc\")",
       "Bash(cmd.exe /c \"copy \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\IcebergClassico.vsf\\\\\" \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\FlatUILight.vsf\\\\\" && copy \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\LavenderClassico.vsf\\\\\" \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\WedgewoodLight.vsf\\\\\" && copy \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\Windows10.vsf\\\\\" \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\Windows10ClearDay.vsf\\\\\"\")",
       "Bash(cmd.exe /c \"xcopy /Y \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\IcebergClassico.vsf\\\\\" \\\\\"C:\\\\Users\\\\Public\\\\Documents\\\\Embarcadero\\\\Studio\\\\23.0\\\\Styles\\\\FlatUILight.vsf*\\\\\"\")",
-      "Skill(claude-api)"
+      "Skill(claude-api)",
+      "Bash(cat ~/.claude/tasks/fix-audit-issues/*.md)"
     ]
   }
 }
