@@ -4,7 +4,7 @@ description: >
   Writes detailed reference documentation for a single swmm_cli command.
   Invoke with the command name as the argument, e.g. "element get" or
   "simulate run". Reads the C# source code, then writes a reference file
-  to plugin/skills/swmm-cli/reference/.
+  to plugin/skills/swmm-agent/reference/.
 model: claude-sonnet-4-6
 tools: [Read, Glob, Grep, Write]
 ---
@@ -44,13 +44,13 @@ Read these files:
 3. `cli/SwmmCli/Session/SessionStore.cs`
 4. `cli/SwmmCli/Models/SwmmElementDeserializer.cs` (defines which types are deserialised and to what shape)
 5. `cli/SwmmCli/Models/SwmmElementRef.cs` (the typed model records — source of truth for all response fields)
-6. `plugin/skills/swmm-cli/SKILL.md` (for context on the full command set)
+6. `plugin/skills/swmm-agent/SKILL.md` (for context on the full command set)
 
 ## Step 3 — Write the reference document
 
 Map the command name to its output filename:
 - Replace spaces with hyphens and lowercase → `element get` → `element-get.md`
-- Write to: `plugin/skills/swmm-cli/reference/<command>.md`
+- Write to: `plugin/skills/swmm-agent/reference/<command>.md`
 
 The document MUST follow this exact structure:
 

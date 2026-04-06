@@ -38,7 +38,7 @@ plugin/                   Claude Code plugin
     runswmm.exe           SWMM dependency
     swmm5.dll             SWMM engine
   bin/                    swmm_cli goes here (added to PATH when plugin active)
-  skills/swmm-cli/        Master skill + per-command reference docs
+  skills/swmm-agent/      Master skill + per-command reference docs
 
 agent/                    Agent SDK standalone app
   swmm_agent.py           Entry point for programmatic use

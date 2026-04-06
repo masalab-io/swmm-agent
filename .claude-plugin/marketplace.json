@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "swmm",
+      "name": "swmm-agent",
       "source": "./plugin",
       "description": "Control EPA SWMM 5.2.4 GUI from Claude Code — read/write model elements, run simulations, retrieve results",
       "version": "0.1.0",

@@ -14,14 +14,14 @@ Control EPA SWMM 5.2.4 from AI agents (Claude Code, Agent SDK, or any bash-capab
 
 ### 2. Install the plugin
 
-Run `/plugin`, go to **Discover**, find **swmm**, and choose your scope:
+Run `/plugin`, go to **Discover**, find **swmm-agent**, and choose your scope:
 - **User** — available in all your projects
 - **Project** — available to everyone who clones this repo
 - **Local** — just for you in this repo
 
 Or install directly:
 ```
-/plugin install swmm@masalab-io-swmm-agent
+/plugin install swmm-agent@masalab-io
 ```
 
 ### 3. Activate
@@ -33,7 +33,7 @@ Or install directly:
 ### Uninstall
 
 ```
-/plugin uninstall swmm@masalab-io-swmm-agent
+/plugin uninstall swmm-agent@masalab-io
 ```
 
 To also remove the marketplace:
@@ -123,7 +123,7 @@ cli/                           .NET CLI client (swmm_cli.exe)
 plugin/
   dist/                        Pre-built Epaswmm5.exe + runswmm.exe + swmm5.dll
   bin/                         swmm_cli (on PATH when plugin active)
-  skills/swmm-cli/             Master skill + per-command reference docs
+  skills/swmm-agent/           Master skill + per-command reference docs
 .claude-plugin/                Claude Code marketplace definition
 agent/                         Agent SDK standalone app
 ```

@@ -1,5 +1,5 @@
 ---
-name: swmm-cli
+name: swmm-agent
 description: >
   Use for any interaction with a running SWMM model. Requires the bundled
   Epaswmm5.exe from plugin/dist/ — the standard EPA SWMM download does not have
@@ -270,7 +270,7 @@ Each command has a reference file with full parameter tables, chaining
 examples, and agent gotchas. Read it before using that command:
 
 ```
-${CLAUDE_PLUGIN_ROOT}/skills/swmm-cli/reference/<command>.md
+${CLAUDE_PLUGIN_ROOT}/skills/swmm-agent/reference/<command>.md
 ```
 
 Reference file names:
