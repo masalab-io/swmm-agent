@@ -86,7 +86,17 @@ omit `--pid` for all subsequent calls.
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode
+
+`element add` can sit in a pipeline after `process launch` and `file open`.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/model.inp" | \
+  swmm_cli element add --type junction --id J10 --x 1200.0 --y 850.0
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -94,7 +104,7 @@ swmm_cli element add --pid $PID --type junction --id J10 --x 1200.0 --y 850.0
 swmm_cli element set --pid $PID --type junction --id J10 --prop invert_elev --value 45.5
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 4872
@@ -103,7 +113,7 @@ swmm_cli element set --type junction --id J10 --prop invert_elev --value 45.5
 swmm_cli element get --type junction --id J10   # verify
 ```
 
-### Pattern 3 — sequential workflow: add node, connect conduit, run simulation
+### Pattern 4 — sequential workflow: add node, connect conduit, run simulation
 
 After adding a new node you typically need to add a conduit connecting it to
 the network, set properties, and then run a simulation to check the impact.

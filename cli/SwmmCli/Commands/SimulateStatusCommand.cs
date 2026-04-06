@@ -17,7 +17,8 @@ static class SimulateStatusCommand
         {
             try
             {
-                int resolvedPid = SessionResolver.ResolvePid(pid);
+                int? pipedPid = SessionResolver.ReadAndReEmitSessionPid();
+                int resolvedPid = SessionResolver.ResolvePid(pid, pipedPid);
                 var req = JsonSerializer.Serialize(new { cmd = "simulate.status" });
                 Environment.Exit(await PipeClient.SendAsync(resolvedPid, req));
             }

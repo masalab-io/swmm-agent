@@ -169,7 +169,26 @@ If resolution fails (step 6), the command outputs `{"ok":false,"error":"..."}` a
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode
+
+`element set` can sit in a pipeline after `process launch` and `file open`.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/model.inp" | \
+  swmm_cli element set --type junction --id J5 --prop invert_elev --value 97.5
+```
+
+To set multiple properties, run the pipeline once per property (each stage
+re-emits the session line so it flows to all subsequent commands):
+
+```bash
+PID=$(swmm_cli process launch | jq '.pid')
+swmm_cli element set --pid $PID --type junction --id J5 --prop invert_elev --value 97.5
+swmm_cli element set --pid $PID --type junction --id J5 --prop max_depth   --value 4.0
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -177,7 +196,7 @@ swmm_cli element set --pid $PID --type junction --id J5 --prop invert_elev --val
 swmm_cli element set --pid $PID --type conduit  --id C3 --prop roughness    --value 0.015
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 14832
@@ -185,7 +204,7 @@ swmm_cli element set --type junction --id J5 --prop invert_elev --value 97.5
 swmm_cli element set --type conduit  --id C3 --prop roughness    --value 0.015
 ```
 
-### Pattern 3 — sequential workflow (set → verify → simulate → check results)
+### Pattern 4 — sequential workflow (set → verify → simulate → check results)
 
 ```bash
 # Attach to session

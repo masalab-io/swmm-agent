@@ -25,7 +25,8 @@ static class ElementSetCommand
         {
             try
             {
-                int resolvedPid = SessionResolver.ResolvePid(pid);
+                int? pipedPid = SessionResolver.ReadAndReEmitSessionPid();
+                int resolvedPid = SessionResolver.ResolvePid(pid, pipedPid);
                 var req = JsonSerializer.Serialize(new { cmd = "element.set", type, id, prop, value });
                 Environment.Exit(await PipeClient.SendAsync(resolvedPid, req));
             }

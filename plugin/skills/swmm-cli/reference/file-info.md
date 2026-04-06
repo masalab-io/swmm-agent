@@ -93,7 +93,17 @@ If resolution fails, the CLI prints `{"ok":false,"error":"..."}` and exits with 
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode
+
+`file info` can sit in a pipeline as a verification step after `file open`.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/catchment_2024.inp" | \
+  swmm_cli file info
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -101,14 +111,14 @@ swmm_cli file info --pid $PID
 swmm_cli element list --pid $PID --type junction
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 18340
 swmm_cli file info   # --pid not needed
 ```
 
-### Pattern 3 — sequential workflow (session setup → file open → file info → element commands)
+### Pattern 4 — sequential workflow (session setup → file open → file info → element commands)
 
 `file info` is the verification step that sits between `file open` and the first element command. Always run it after opening a file to confirm the correct model is loaded.
 

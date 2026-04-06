@@ -86,7 +86,28 @@ If resolution fails, the CLI prints `{"ok":false,"error":"..."}` and exits with 
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode (recommended)
+
+`file open` is the second stage of a typical pipeline, immediately after
+`process launch`. It reads the session PID from the upstream session line,
+opens the model, re-emits all upstream lines, and appends its own result.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/models/catchment_v3.inp" | \
+  swmm_cli simulate run | \
+  swmm_cli results summary --type junction --id J5
+```
+
+```bash
+# With element listing and filtering
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/models/catchment_v3.inp" | \
+  swmm_cli element list --type conduit | \
+  swmm_cli element filter --prop length --op gt --value 150
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -94,7 +115,7 @@ swmm_cli file open --pid $PID --path "C:/models/catchment_v3.inp"
 swmm_cli element list --pid $PID --type junction
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 14528
@@ -103,7 +124,7 @@ swmm_cli file info                                         # verify load
 swmm_cli element list --type junction
 ```
 
-### Pattern 3 — sequential workflow (launch → open → simulate)
+### Pattern 4 — sequential workflow (launch → open → simulate)
 
 The most common full workflow: launch SWMM, open a model, run a simulation, retrieve results.
 

@@ -131,7 +131,20 @@ Steps 1–4 are the relevant paths in practice. Step 5 is convenient in single-i
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode (recommended)
+
+`results get` is the natural terminal stage of a simulation pipeline. Because
+`simulate run` drains stdin to EOF and blocks until the run finishes, `results
+get` never fires until the simulation is complete — no polling required.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/model.inp" | \
+  swmm_cli simulate run | \
+  swmm_cli results get --type junction --id J5 --variable depth
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -140,7 +153,7 @@ swmm_cli results get --type junction --id J5 --variable depth --pid $PID
 swmm_cli results get --type conduit  --id C3 --variable flow  --pid $PID
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 18432
@@ -149,7 +162,7 @@ swmm_cli results get --type junction     --id J5 --variable depth   # --pid not 
 swmm_cli results get --type subcatchment --id S2 --variable runoff
 ```
 
-### Pattern 3 — sequential workflow
+### Pattern 4 — sequential workflow
 
 `simulate run` **blocks** until the run finishes and returns the final status —
 no polling loop required.

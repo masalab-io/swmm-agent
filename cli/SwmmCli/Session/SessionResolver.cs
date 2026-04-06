@@ -48,37 +48,40 @@ static class SessionResolver
     }
 
     /// <summary>
-    /// Reads the first {"kind":"session"} line from piped stdin (non-blocking peek).
-    /// Re-emits it so the session propagates to the next stage in the pipeline.
-    /// Returns the pid value, or null if stdin is not piped or has no session line.
+    /// Drains all piped stdin to EOF, re-emitting every line.
+    /// This blocks until the upstream command finishes, ensuring sequential
+    /// execution across pipeline stages. Returns the pid from the first
+    /// {"kind":"session"} line found, or null if stdin is not piped.
     /// </summary>
     public static int? ReadAndReEmitSessionPid()
     {
         if (!Console.IsInputRedirected)
             return null;
 
-        // Peek at the first line — if it is a session line, consume and re-emit it.
-        var line = Console.ReadLine();
-        if (line is null) return null;
-
-        try
+        int? foundPid = null;
+        string? line;
+        while ((line = Console.ReadLine()) != null)
         {
-            var doc = JsonDocument.Parse(line);
-            if (doc.RootElement.TryGetProperty("kind", out var kindProp) &&
-                kindProp.GetString() == "session" &&
-                doc.RootElement.TryGetProperty("pid", out var pidProp) &&
-                pidProp.TryGetInt32(out int pid))
+            // Re-emit every line so it propagates to the next stage.
+            Console.WriteLine(line);
+
+            if (foundPid == null)
             {
-                // Re-emit so downstream commands also see the session line.
-                Console.WriteLine(line);
-                return pid;
+                try
+                {
+                    var doc = JsonDocument.Parse(line);
+                    if (doc.RootElement.TryGetProperty("kind", out var kindProp) &&
+                        kindProp.GetString() == "session" &&
+                        doc.RootElement.TryGetProperty("pid", out var pidProp) &&
+                        pidProp.TryGetInt32(out int pid))
+                    {
+                        foundPid = pid;
+                    }
+                }
+                catch (JsonException) { }
             }
         }
-        catch (JsonException) { }
 
-        // Not a session line — put it back by... we can't unread, so callers
-        // that need stdin content must handle this. For Phase 1 commands that
-        // don't read stdin this is fine; Phase 3 will refine this.
-        return null;
+        return foundPid;
     }
 }

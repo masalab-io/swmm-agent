@@ -19,7 +19,8 @@ static class FileOpenCommand
         {
             try
             {
-                int resolvedPid = SessionResolver.ResolvePid(pid);
+                int? pipedPid = SessionResolver.ReadAndReEmitSessionPid();
+                int resolvedPid = SessionResolver.ResolvePid(pid, pipedPid);
                 string fullPath = Path.GetFullPath(path);
                 var req = JsonSerializer.Serialize(new { cmd = "file.open", path = fullPath });
                 Environment.Exit(await PipeClient.SendAsync(resolvedPid, req));

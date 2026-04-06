@@ -23,7 +23,8 @@ static class ResultsGetCommand
         {
             try
             {
-                int resolvedPid = SessionResolver.ResolvePid(pid);
+                int? pipedPid = SessionResolver.ReadAndReEmitSessionPid();
+                int resolvedPid = SessionResolver.ResolvePid(pid, pipedPid);
                 var req = JsonSerializer.Serialize(new { cmd = "results.get", type, id, variable });
                 Environment.Exit(await PipeClient.SendAsync(resolvedPid, req));
             }

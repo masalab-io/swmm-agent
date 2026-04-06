@@ -106,7 +106,23 @@ If resolution fails with "Multiple SWMM instances running", use `--pid` to targe
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode (recommended)
+
+`simulate run` blocks until the simulation finishes and the SWMM engine returns
+the final status. In a pipeline this blocking behaviour is automatic (each stage
+drains stdin to EOF before returning), so no polling loop is needed.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/ExampleModel.inp" | \
+  swmm_cli simulate run | \
+  swmm_cli results summary --type junction --id J5
+```
+
+The `results summary` stage begins only after `simulate run` finishes — the
+drain-to-EOF pattern enforces this without any sleep or polling.
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -115,7 +131,7 @@ swmm_cli simulate run --pid $PID
 swmm_cli results summary --type junction --id J5 --pid $PID
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 7412
@@ -124,7 +140,7 @@ swmm_cli simulate run          # --pid not needed
 swmm_cli results summary --type junction --id J5
 ```
 
-### Pattern 3 — sequential workflow: modify → run → verify → fetch results
+### Pattern 4 — sequential workflow: modify → run → verify → fetch results
 
 This is the standard agent workflow for a parametric study.
 

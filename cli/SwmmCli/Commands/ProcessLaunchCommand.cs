@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Diagnostics;
 using System.Text.Json;
+using SwmmCli.IO;
 
 namespace SwmmCli.Commands;
 
@@ -17,7 +18,7 @@ static class ProcessLaunchCommand
                 var p = Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true })
                     ?? throw new InvalidOperationException("Process.Start returned null");
                 System.Threading.Thread.Sleep(500);
-                Console.WriteLine(JsonSerializer.Serialize(new { ok = true, pid = p.Id }));
+                NdJson.WriteSession(p.Id);
                 Environment.Exit(0);
             }
             catch (Exception ex)

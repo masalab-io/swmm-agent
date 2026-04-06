@@ -197,7 +197,17 @@ If resolution fails with "Multiple SWMM instances running", specify `--pid` expl
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode
+
+`element get` can sit in a pipeline after `process launch` and `file open`.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/model.inp" | \
+  swmm_cli element get --type junction --id J5
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -205,7 +215,7 @@ swmm_cli element get --type junction --id J5 --pid $PID
 swmm_cli element get --type conduit  --id C3  --pid $PID
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 18340
@@ -213,7 +223,7 @@ swmm_cli element get --type junction --id J5   # --pid not needed
 swmm_cli element get --type conduit  --id C3   # --pid not needed
 ```
 
-### Pattern 3 — sequential workflow: get → set → verify
+### Pattern 4 — sequential workflow: get → set → verify
 
 The canonical pattern for making a controlled edit:
 

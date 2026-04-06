@@ -19,7 +19,7 @@ This command takes no flags. There is no `--pid` option because the process does
 ## Response shape
 
 ```json
-{ "ok": true, "pid": 18432 }
+{ "kind": "session", "pid": 18432 }
 { "ok": false, "error": "Epaswmm5.exe not found. Set CLAUDE_PLUGIN_ROOT to the plugin root directory, or ensure Epaswmm5.exe exists at dist/ alongside the swmm_cli binary." }
 ```
 
@@ -27,8 +27,12 @@ This command takes no flags. There is no `--pid` option because the process does
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `ok` | bool | Always `true` on success |
+| `kind` | string | Always `"session"` — identifies this as a pipeable session line |
 | `pid` | int | OS process ID of the newly launched `Epaswmm5.exe` |
+
+The session line format (`{"kind":"session","pid":N}`) is recognized by all
+downstream consumer commands when piped, allowing the PID to propagate
+automatically through a bash pipeline.
 
 **Failure fields:**
 
@@ -63,7 +67,33 @@ swmm_cli attach 18432
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode (recommended)
+
+`process launch` is the natural start of a bash pipeline. Its session line
+`{"kind":"session","pid":N}` is picked up automatically by every downstream
+consumer — no `--pid` flag or `attach` call needed.
+
+```bash
+# Full pipeline: launch → open → simulate → results
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/catchment.inp" | \
+  swmm_cli simulate run | \
+  swmm_cli results summary --type junction --id J5
+```
+
+Each consumer stage blocks until the previous stage finishes (drain-to-EOF),
+so the pipeline runs sequentially even though bash starts all processes
+simultaneously.
+
+```bash
+# Pipeline with element filtering
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/catchment.inp" | \
+  swmm_cli element list --type junction | \
+  swmm_cli element filter --prop invert_elev --op gt --value 100.0
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process launch | jq '.pid')
@@ -73,7 +103,7 @@ swmm_cli file open --path "C:/Models/catchment.inp" --pid $PID
 swmm_cli element get --type junction --id J1 --pid $PID
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 PID=$(swmm_cli process launch | jq '.pid')
@@ -81,31 +111,6 @@ swmm_cli attach $PID
 # all subsequent commands resolve the PID from .swmm/session.json automatically
 swmm_cli file open --path "C:/Models/catchment.inp"
 swmm_cli simulate run
-```
-
-### Pattern 3 — sequential workflow
-
-Full session start-to-simulation workflow:
-
-```bash
-# Launch and capture PID
-PID=$(swmm_cli process launch | jq '.pid')
-
-# Poll until the named-pipe server is ready
-READY=false
-for i in $(seq 1 10); do
-  READY=$(swmm_cli process list | jq -r ".processes[] | select(.pid==$PID) | .available")
-  [ "$READY" = "true" ] && break
-  sleep 1
-done
-
-# Attach session so --pid is not needed again
-swmm_cli attach $PID
-
-# Open a model file and run (simulate run blocks until complete)
-swmm_cli file open --path "C:/Models/catchment.inp"
-swmm_cli simulate run   # blocks — returns {"ok":true,"data":{"status":"success",...}}
-swmm_cli results summary --type junction --id J5
 ```
 
 ## Gotchas and caveats for agents

@@ -62,6 +62,7 @@ elementCommand.AddCommand(ElementGetCommand.Build());
 elementCommand.AddCommand(ElementSetCommand.Build());
 elementCommand.AddCommand(ElementListCommand.Build());
 elementCommand.AddCommand(ElementAddCommand.Build());
+elementCommand.AddCommand(ElementFilterCommand.Build());
 rootCommand.AddCommand(elementCommand);
 
 // ---------------------------------------------------------------------------

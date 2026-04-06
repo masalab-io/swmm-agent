@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.Text.Json;
+using SwmmCli.IO;
 using SwmmCli.Session;
 
 namespace SwmmCli.Commands;
@@ -14,7 +14,7 @@ static class AttachCommand
         cmd.SetHandler((int pid) =>
         {
             SessionStore.WritePid(pid);
-            Console.WriteLine(JsonSerializer.Serialize(new { ok = true, pid }));
+            NdJson.WriteSession(pid);
         }, pidArg);
         return cmd;
     }

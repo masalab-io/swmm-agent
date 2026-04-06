@@ -19,7 +19,8 @@ static class ElementListCommand
         {
             try
             {
-                int resolvedPid = SessionResolver.ResolvePid(pid);
+                int? pipedPid = SessionResolver.ReadAndReEmitSessionPid();
+                int resolvedPid = SessionResolver.ResolvePid(pid, pipedPid);
                 var req = JsonSerializer.Serialize(new { cmd = "element.list", type });
                 Environment.Exit(await PipeClient.SendAsync(resolvedPid, req));
             }

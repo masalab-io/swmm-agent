@@ -66,7 +66,24 @@ If resolution fails with "Multiple SWMM instances running", specify `--pid` expl
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode
+
+`simulate status` can follow `simulate run` in a pipeline. Because `simulate
+run` blocks until the simulation completes, `simulate status` here just
+confirms the final state — it does not need to poll.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/model.inp" | \
+  swmm_cli simulate run | \
+  swmm_cli simulate status
+```
+
+In practice, `simulate run` already returns the final status in its own
+response, so `simulate status` in a pipeline is only useful for inspection or
+logging purposes.
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -74,7 +91,7 @@ swmm_cli simulate run --pid $PID
 swmm_cli simulate status --pid $PID
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 18340
@@ -82,7 +99,7 @@ swmm_cli simulate run            # --pid not needed
 swmm_cli simulate status         # --pid not needed
 ```
 
-### Pattern 3 — sequential workflow: run → get results
+### Pattern 4 — sequential workflow: run → get results
 
 `simulate run` blocks until complete and returns the status directly — no
 polling loop is required.

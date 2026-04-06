@@ -165,7 +165,22 @@ Steps 1 and 4 are the paths used in normal agent workflows. Step 4 is activated 
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode (recommended)
+
+`results summary` is the natural terminal stage of a pipeline. It receives the
+session PID from upstream, calls the SWMM server for summary data, and emits
+all prior lines plus its own result. Because `simulate run` blocks until the
+simulation completes, `results summary` will never be called before the run
+finishes — no polling required.
+
+```bash
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/model.inp" | \
+  swmm_cli simulate run | \
+  swmm_cli results summary --type junction --id J5
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -174,7 +189,7 @@ swmm_cli results summary --type junction --id J5   --pid $PID
 swmm_cli results summary --type conduit  --id C3   --pid $PID
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 18340
@@ -183,7 +198,7 @@ swmm_cli results summary --type junction     --id J5    # --pid not needed
 swmm_cli results summary --type subcatchment --id Sub1
 ```
 
-### Pattern 3 — sequential workflow
+### Pattern 4 — sequential workflow
 
 `simulate run` **blocks** until the run finishes and returns the final status
 directly — no polling loop required:

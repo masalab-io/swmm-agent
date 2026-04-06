@@ -19,16 +19,20 @@ swmm_cli attach <pid>
 ## Response shape
 
 ```json
-{ "ok": true, "pid": 14328 }   // success — PID was written to .swmm/session.json
-{ "ok": false, "error": "..." } // failure (not currently emitted by attach itself; see Gotchas)
+{ "kind": "session", "pid": 14328 }  // success — PID was written to .swmm/session.json
+{ "ok": false, "error": "..." }       // failure (not currently emitted by attach itself; see Gotchas)
 ```
 
 Success payload fields:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `ok` | boolean | Always `true` on success. |
+| `kind` | string | Always `"session"` — identifies this as a pipeable session line |
 | `pid` | integer | The PID that was written to the session file. Echo of the argument. |
+
+The session line format (`{"kind":"session","pid":N}`) is recognized by all
+downstream consumer commands when piped, so `attach` can be used at the start
+of a pipeline just like `process launch`.
 
 ## How to use it
 

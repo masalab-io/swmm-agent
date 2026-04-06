@@ -33,27 +33,22 @@ swmm_cli element list --type <type> [--pid <N>]
 ## Response shape
 
 ```json
-{ "ok": true, "elements": [ ... ] }   // success — array of element refs
-{ "ok": false, "error": "..." }        // failure
+{ "ok": true, "data": { "type": "junction", "ids": ["J1", "J5", "J12"] } }
+{ "ok": false, "error": "..." }
 ```
 
-On success the `elements` array contains one object per element of the requested type. Each object is a slim element reference:
+On success the `data` object contains:
 
-```json
-[
-  { "kind": "swmm_element", "id": "J1", "type": "junction" },
-  { "kind": "swmm_element", "id": "J5", "type": "junction" },
-  { "kind": "swmm_element", "id": "J12", "type": "junction" }
-]
-```
+| Field | Type | Description |
+|-------|------|-------------|
+| `data.type` | string | Echoes the `--type` argument (e.g. `"junction"`) |
+| `data.ids` | array of string | All element IDs of that type in the open model. Case-sensitive; use these exact strings when calling `element get`, `element set`, or `element filter`. |
 
-| Field | Description |
-|-------|-------------|
-| `kind` | Always `"swmm_element"` — identifies this as a SWMM element reference |
-| `id` | The element's name as it appears in the SWMM model (e.g. `J1`, `C3`, `Sub1`). Case-sensitive; use exactly this value when calling `element get` or `element set`. |
-| `type` | Echoes the `--type` argument used in the request (e.g. `"junction"`) |
+An empty `ids` array (`[]`) is a valid success — the model has no elements of that type.
 
 On failure `{ "ok": false, "error": "..." }` is printed to stdout and the process exits with code 1.
+
+This response format is also the **input format** expected by `element filter` — the command reads `data.type` and `data.ids` from its piped stdin to know what list to filter.
 
 ## How to use it
 
@@ -67,13 +62,13 @@ swmm_cli element list --type junction
 swmm_cli element list --type conduit
 
 # Extract just the IDs with jq
-swmm_cli element list --type junction | jq '[.elements[].id]'
+swmm_cli element list --type junction | jq '.data.ids'
 ```
 
 To count how many junctions exist:
 
 ```bash
-swmm_cli element list --type junction | jq '.elements | length'
+swmm_cli element list --type junction | jq '.data.ids | length'
 ```
 
 ## PID resolution for this command
@@ -91,7 +86,29 @@ If resolution fails with "Multiple SWMM instances running", specify `--pid` expl
 
 ## How to chain it
 
-### Pattern 1 — capture PID once, reuse across commands
+### Pattern 1 — pipeline mode (recommended)
+
+`element list` sits naturally in the middle of a pipeline. It reads the session
+PID from upstream, calls the SWMM server, and emits all upstream lines plus its
+own result. Downstream `element filter` stages read the `data.ids` list from
+its output.
+
+```bash
+# List → filter → filter (chained)
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/model.inp" | \
+  swmm_cli element list --type junction | \
+  swmm_cli element filter --prop invert_elev --op gt --value 4970
+
+# Full pipeline: launch → open → list → filter → inspect
+swmm_cli process launch | \
+  swmm_cli file open --path "C:/Models/model.inp" | \
+  swmm_cli element list --type conduit | \
+  swmm_cli element filter --prop length --op gt --value 200 | \
+  swmm_cli element filter --prop tag --op eq --value Main
+```
+
+### Pattern 2 — capture PID once, reuse across commands
 
 ```bash
 PID=$(swmm_cli process list | jq '.processes[0].pid')
@@ -99,7 +116,7 @@ swmm_cli element list --type junction --pid $PID
 swmm_cli element list --type conduit  --pid $PID
 ```
 
-### Pattern 2 — session file (attach once, omit --pid everywhere)
+### Pattern 3 — session file (attach once, omit --pid everywhere)
 
 ```bash
 swmm_cli attach 18340
@@ -107,13 +124,13 @@ swmm_cli element list --type junction   # --pid not needed
 swmm_cli element list --type conduit    # --pid not needed
 ```
 
-### Pattern 3 — sequential workflow: list → get → set
+### Pattern 4 — sequential workflow: list → get → set
 
 The canonical bulk-edit pattern — discover all IDs, then read and modify each one:
 
 ```bash
 # 1. Enumerate all junctions
-JUNCTIONS=$(swmm_cli element list --type junction | jq -r '.elements[].id')
+JUNCTIONS=$(swmm_cli element list --type junction | jq -r '.data.ids[]')
 
 # 2. Read each junction's properties
 for ID in $JUNCTIONS; do
@@ -131,7 +148,7 @@ swmm_cli element get --type junction --id J5 | jq '.invert_elev'
 
 - **Exit codes**: exits 0 on success, 1 on any error (unrecognised type string, pipe failure, no file open). Always check exit code before consuming stdout.
 
-- **Empty array is valid**: if the model has no elements of the requested type, `elements` is an empty array `[]` — this is a success response (`"ok": true`), not an error. Do not treat an empty list as a failure.
+- **Empty array is valid**: if the model has no elements of the requested type, `data.ids` is an empty array `[]` — this is a success response (`"ok": true`), not an error. Do not treat an empty list as a failure.
 
 - **Type string is case-insensitive at the CLI layer**: the `--type` flag accepts `junction`, `Junction`, and `JUNCTION` interchangeably. The `type` field in the response is normalised to lowercase.
 
