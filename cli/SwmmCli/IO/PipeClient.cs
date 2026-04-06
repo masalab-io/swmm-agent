@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
@@ -26,7 +27,11 @@ static class PipeClient
         }
         catch (OperationCanceledException)
         {
-            throw new Exception("Pipe connect timeout — is SWMM running with the agent?");
+            var swmmProcs = Process.GetProcessesByName("Epaswmm5");
+            string msg = "Pipe connect timeout — is SWMM running with the agent?";
+            if (swmmProcs.Length > 1)
+                msg += $" Note: {swmmProcs.Length} Epaswmm5.exe instances are running — specify --pid to target one.";
+            throw new Exception(msg);
         }
 
         byte[] payload = Encoding.UTF8.GetBytes(requestJson + "\n");

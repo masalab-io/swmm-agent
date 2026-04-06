@@ -40,19 +40,23 @@ claude update
 
 After updating, restart Claude Code and run `/reload-plugins`.
 
-If you cannot update immediately, use the full path as a fallback:
-```
-"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe"
-```
+If `swmm_cli` returns "command not found", the plugin may not be installed:
+1. The user should run `/plugin install swmm-agent@masalab-io` then
+   `/reload-plugins`.
+2. If still not found, use the fallback: `"${CLAUDE_PLUGIN_ROOT}/bin/swmm_cli.exe"`
+3. Do **not** search for the binary with `ls`, `find`, or `glob`.
 
 ---
 
 ## Rules — read these first
 
 1. **`swmm_cli` is on PATH.** Call it directly. Never `cd` to the plugin
-   directory or any other directory before calling it.
-2. **Always use pipeline mode.** Chain commands with `|`. Do not make
-   separate Bash calls for each step.
+   directory or any other directory before calling it. Do not use relative
+   paths to the binary. Do not ls or glob to locate it.
+2. **Use pipeline mode for end-to-end workflows.** Chain commands with `|`
+   when running a full sequence from launch to results. For interactive
+   workflows where you need to inspect intermediate results, use `--pid` on
+   separate calls instead.
 3. **Never loop over `element get` to filter.** Use
    `element list | element filter` — it runs server-side in one pipeline.
 4. **Use the specific element subtype** (`junction`, `conduit`, etc.) for
@@ -108,14 +112,19 @@ swmm_cli process launch | \
 
 ### Modify a property and re-run
 
-```bash
-swmm_cli process launch | \
-  swmm_cli file open --path "C:/path/to/model.inp" | \
-  swmm_cli element set --type junction --id J5 --prop invert_elev --value 97.5
+This is an interactive workflow — use `--pid` so you can inspect the set
+result before committing to a re-run.
 
-# Then in the same session (auto-discovery finds the single instance):
-swmm_cli simulate run | \
-  swmm_cli results summary --type junction --id J5
+```bash
+# Step 1: launch and open
+PID=$(swmm_cli process launch | swmm_cli file open --path "C:/path/to/model.inp" | tail -1 | jq '.pid')
+
+# Step 2: inspect current value, then set
+swmm_cli element get --type junction --id J5 --pid $PID
+swmm_cli element set --type junction --id J5 --prop invert_elev --value 97.5 --pid $PID
+
+# Step 3: re-run and get results
+swmm_cli simulate run --pid $PID | swmm_cli results summary --type junction --id J5
 ```
 
 ### Get full depth time-series for a junction
@@ -258,6 +267,9 @@ SWMM instance is running.
   Changes are lost if SWMM closes without saving.
 - **Re-run after changes:** after `element set`, previous results are stale.
   Call `simulate run` again.
+- **Pipeline output is multi-line:** each stage re-emits all upstream lines
+  before appending its own result. The final command's result is always the
+  last line. Extract it with `tail -1 | jq`.
 
 ---
 
