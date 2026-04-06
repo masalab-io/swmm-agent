@@ -138,5 +138,6 @@ begin
   Application.CreateForm(TQueryForm, QueryForm);
   Application.CreateForm(TEventsForm, EventsForm);
   Application.CreateForm(TInletUsageForm, InletUsageForm);
+  StartPipeServer;
   Application.Run;
 end.

@@ -167,7 +167,7 @@ end;
 // ---------------------------------------------------------------------------
 
 initialization
-  StartPipeServer;
+  // nothing — pipe server is started on demand via StartPipeServer
 
 finalization
   if Assigned(GPipeThread) then
