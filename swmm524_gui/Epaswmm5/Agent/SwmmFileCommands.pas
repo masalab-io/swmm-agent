@@ -22,6 +22,7 @@ uses
   System.SysUtils,
   Vcl.Forms,
   Uglobals,
+  Uoutput,
   Fmain,
   Dwelcome,
   SwmmJsonUtils;
@@ -52,8 +53,13 @@ begin
   end;
 
   // Clear existing model data, then load the new file.
-  // OpenFile is private; we replicate its effect using public methods.
-  MainForm.CloseForms;                        // close any open result/graph windows
+  // Replicate MainForm.OpenFile (private) using public methods.
+  // MUST clear output state before Project.Clear — otherwise RunFlag stays
+  // True while the elements it references are destroyed, causing AV on repaint.
+  MainForm.CloseForms;
+  Uoutput.ClearOutput;
+  RunStatus := rsNone;
+  RunFlag   := False;
   if Assigned(Project) then Project.Clear;
   InputFileName := PathStr;
   MainForm.ReadInpFile(PathStr);

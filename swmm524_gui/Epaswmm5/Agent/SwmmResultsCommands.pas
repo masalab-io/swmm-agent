@@ -72,15 +72,18 @@ begin
     RS.ReportItems[0].Axis     := 1;
 
     GForm := TGraphForm.Create(MainForm);
-    if GForm.CreateGraph(RS) then
-    begin
-      GForm.RefreshGraph;
-      GForm.Show;
-      GForm.BringToFront;
-      Application.ProcessMessages;
-      Sleep(UI_FLASH_DELAY_MS);
+    try
+      if GForm.CreateGraph(RS) then
+      begin
+        GForm.RefreshGraph;
+        GForm.Show;
+        GForm.BringToFront;
+        Application.ProcessMessages;
+        Sleep(UI_FLASH_DELAY_MS);
+      end;
+    finally
+      GForm.Close;  // caFree handles cleanup
     end;
-    GForm.Close;  // caFree handles cleanup
   finally
     Items.Free;
   end;
