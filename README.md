@@ -76,6 +76,18 @@ swmm_cli element set  --pid 1234 --type junction --id J1 --prop invert_elev --va
 swmm_cli simulate run --pid 1234
 ```
 
+Commands can also be chained into pipelines — the output of one command becomes the
+input of the next, so multi-step workflows run in a single call:
+
+```bash
+# Chain: get all junctions → filter to a basin → set invert → run → fetch results
+swmm_cli element list --pid 1234 --type junction \
+  | swmm_cli element filter --prop basin --value north \
+  | swmm_cli element set --prop invert_elev --value 12.5 \
+  | swmm_cli simulate run \
+  | swmm_cli results summary
+```
+
 ## How It Works
 
 Two new Delphi source files are compiled into the existing SWMM project:
